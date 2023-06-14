@@ -1,59 +1,39 @@
-// app.js (or index.js)
+import express from "express";
+import jwt from "jsonwebtoken";
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
+import userRoutes from "./routes/user.js";
 
-require('dotenv').config();
-const express = require('express');
-// const admin = require('firebase-admin');
-const cors = require('cors');
-const connection = require('./db');
-const userRoutes = require('./routes/users');
-const authRoutes = require('./routes/auth');
+const rawData = fs.readFileSync("./swagger.json");
+const swaggerDocument = JSON.parse(rawData);
 
 const app = express();
-const port = process.env.PORT || 5500;
-
-// db
-connection();
-
-// middlewares
 app.use(express.json());
-app.use(cors());
 
-// routes
-app.use('/api/users', userRoutes);
-app.use('/app/auth', authRoutes);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.get('*', () => {
-  console.log('Data');
+app.use('/api/user', userRoutes);
+
+app.get("/api/protected", (req, res) => {
+  // Verify the JWT
+  const token = req.header("Authorization");
+  if (!token) {
+    return res.status(401).json({ error: "Access denied" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, "secretKey");
+    const userId = decoded.userId;
+
+    // Handle the protected route logic here
+    res.json({ message: "Access granted to protected route", userId });
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ error: "Invalid token" });
+  }
 });
 
-// Initialize Firebase Admin SDK
-// admin.initializeApp({
-//   credential: admin.credential.cert({
-//     projectId: process.env.FIREBASE_PROJECT_ID,
-//     privateKeyId: process.env.FIREBASE_PRIVATE_KEY_ID,
-//     privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-//     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-//     clientId: process.env.FIREBASE_CLIENT_ID,
-//     authUri: process.env.FIREBASE_AUTH_URI,
-//     tokenUri: process.env.FIREBASE_TOKEN_URI,
-//     authProviderX509CertUrl: process.env.FIREBASE_AUTH_PROVIDER_CERT_URL,
-//     clientCertUrl: process.env.FIREBASE_CLIENT_CERT_URL,
-//   }),
-// });
-
-// API endpoint for Gmail authentication
-// app.get('/auth/gmail', async (req, res) => {
-//   try {
-//     const provider = new admin.auth.GoogleAuthProvider();
-//     const result = await admin.auth().createSessionCookie(req.query.idToken, { expiresIn: 60 * 60 * 24 * 5 });
-//     res.cookie('session', result, { maxAge: 60 * 60 * 24 * 1000, httpOnly: true });
-//     res.status(200).json({ message: 'Authentication successful' });
-//   } catch (error) {
-//     console.error('Authentication error:', error);
-//     res.status(500).json({ error: 'Internal server error' });
-//   }
-// });
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Start the server
+app.listen(5500, () => {
+  console.log("Server started on http://localhost:5500");
 });
