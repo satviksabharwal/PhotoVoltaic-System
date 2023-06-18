@@ -1,19 +1,21 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 // @mui
-import { Link, Stack, IconButton, InputAdornment, TextField, Checkbox, Typography } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { Link, Stack, IconButton, InputAdornment, TextField, Checkbox, Typography } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setCurrentUserAction } from "../../../store/user/user.action";
 // components
-import Iconify from '../../../components/iconify';
-import { createAuthUserWithEmailAndPassword, createUserDocumentFromAuth } from '../../../utils/firebase/firebase.utils';
+import Iconify from "../../../components/iconify";
 
-const defaultFormFields = { displayName: '', email: '', password: '', confirmPassword: '' };
+const defaultFormFields = { displayName: "", email: "", password: "", confirmPassword: "" };
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const { displayName, email, password, confirmPassword } = formFields;
@@ -30,25 +32,23 @@ export default function RegisterForm() {
   const handleRegister = async (event) => {
     event.preventDefault();
     if (password !== confirmPassword) {
-      toast.error('Password do not match');
+      toast.error("Password do not match");
     } else {
       try {
-        // const { user } = await createAuthUserWithEmailAndPassword(email, password);
-        // await createUserDocumentFromAuth(user, { displayName });
-        const url = 'http://localhost:5500/api/users';
-        const { data: res } = await axios.post(url, { displayName, email, password });
-        toast.success(res.message);
-        resetFormFields();
-        navigate('/dashboard', { replace: true });
+        const url = "http://localhost:5500/api/user";
+        await axios.post(url, { displayName, email, password }).then(
+          (response) => {
+            toast.success(response.data.message);
+            resetFormFields();
+            dispatch(setCurrentUserAction({ displayName, email }));
+            navigate("/dashboard", { replace: true });
+          },
+          (error) => {
+            toast.error(error.response.data.error);
+          }
+        );
       } catch (error) {
-        if (error.response && error.response.status >= 400 && error.response.status <= 500) {
-          toast.error(error.response.data.message);
-        }
-        // if (error.code === 'auth/email-already-in-use') {
-        //   toast.error('Can not create User, Email already in use');
-        // } else {
-        //   toast.error(`User Creation Error: ${error?.message}`);
-        // }
+        toast.error(error);
       }
     }
   };
@@ -62,7 +62,7 @@ export default function RegisterForm() {
           <TextField
             name="displayName"
             label="Display Name"
-            type={'text'}
+            type={"text"}
             required
             id="outlined-basic"
             variant="outlined"
@@ -73,7 +73,7 @@ export default function RegisterForm() {
           <TextField
             name="email"
             label="Email address"
-            type={'email'}
+            type={"email"}
             required
             id="outlined-basic"
             variant="outlined"
@@ -84,7 +84,7 @@ export default function RegisterForm() {
           <TextField
             name="password"
             label="Password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             required
             id="outlined-basic"
             variant="outlined"
@@ -94,7 +94,7 @@ export default function RegisterForm() {
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+                    <Iconify icon={showPassword ? "eva:eye-fill" : "eva:eye-off-fill"} />
                   </IconButton>
                 </InputAdornment>
               ),
@@ -104,7 +104,7 @@ export default function RegisterForm() {
           <TextField
             name="confirmPassword"
             label="Confirm Password"
-            type={'password'}
+            type={"password"}
             required
             id="outlined-basic"
             variant="outlined"
@@ -117,21 +117,21 @@ export default function RegisterForm() {
           <Checkbox
             name="remember"
             label="Remember me"
-            sx={{ '& .MuiSvgIcon-root': { fontSize: 20 } }}
+            sx={{ "& .MuiSvgIcon-root": { fontSize: 20 } }}
             id="outlined-basic"
             variant="outlined"
             fullWidth
             required
           />
-          <Typography style={{ fontSize: 14, color: 'GrayText' }}>
-            I hereby confirm that I have read, understood and agreed the{' '}
+          <Typography style={{ fontSize: 14, color: "GrayText" }}>
+            I hereby confirm that I have read, understood and agreed the{" "}
             <Link variant="subtitle2" target="_blank" href="/tac">
               data privacy statement.*
             </Link>
           </Typography>
         </Stack>
 
-        <LoadingButton fullWidth size="large" type="submit" variant="contained" style={{ backgroundColor: '#48B2E3' }}>
+        <LoadingButton fullWidth size="large" type="submit" variant="contained" style={{ backgroundColor: "#48B2E3" }}>
           Register
         </LoadingButton>
       </form>

@@ -1,13 +1,13 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { Helmet } from 'react-helmet-async';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Helmet } from "react-helmet-async";
 // import { faker } from '@faker-js/faker';
 // @mui
 // import { useTheme } from '@mui/material/styles';
-import { Grid, Container, Typography } from '@mui/material';
+import { Grid, Container, Typography } from "@mui/material";
 // selector
-import { selectCurrentUser } from '../store/user/user.selector';
+import { selectCurrentUser } from "../store/user/user.selector";
 // components
 // import Iconify from '../components/iconify';
 // sections
@@ -31,10 +31,10 @@ export default function DashboardAppPage() {
   const currentUser = useSelector(selectCurrentUser);
 
   useEffect(() => {
-    if (currentUser.displayName === undefined) {
-      navigate('/login');
+    if (currentUser.email === undefined) {
+      navigate("/login");
     }
-  }, [currentUser.displayName]);
+  }, [currentUser.email]);
 
   return (
     <>

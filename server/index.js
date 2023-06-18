@@ -1,5 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import userRoutes from "./routes/user.js";
@@ -9,10 +10,11 @@ const swaggerDocument = JSON.parse(rawData);
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use('/api/user', userRoutes);
+app.use("/api/user", userRoutes);
 
 app.get("/api/protected", (req, res) => {
   // Verify the JWT
