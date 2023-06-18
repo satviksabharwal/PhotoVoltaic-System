@@ -1,18 +1,22 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 // @mui
-import { Link, Stack, IconButton, InputAdornment, TextField } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import axios from 'axios';
+import { Link, Stack, IconButton, InputAdornment, TextField } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setCurrentUserAction } from "../../../store/user/user.action";
 // components
-import Iconify from '../../../components/iconify';
-import { signInAuthWithEmailAndPassword } from '../../../utils/firebase/firebase.utils';
+import Iconify from "../../../components/iconify";
+import { signInAuthWithEmailAndPassword } from "../../../utils/firebase/firebase.utils";
+
 // ----------------------------------------------------------------------
-const defaultFormFields = { email: '', password: '' };
+const defaultFormFields = { email: "", password: "" };
 export default function LoginForm() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const { email, password } = formFields;
@@ -30,40 +34,27 @@ export default function LoginForm() {
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      const url = 'http://localhost:5500/api/auth';
-      const { data: res } = await axios.post(url, { email, password });
-      localStorage.setItem('token', res.data);
-      toast.success(res.message);
-      resetFormFields();
-
-      if (res) {
-        navigate('/dashboard', { replace: true });
-      }
-
-      // const response = await signInAuthWithEmailAndPassword(email, password);
-      // resetFormFields();
-      // if (response) {
-      //   navigate('/dashboard', { replace: true });
-      // }
+      const url = "http://localhost:5500/api/user/login";
+      await axios.post(url, { email, password }).then(
+        (response) => {
+          console.log(response);
+          // localStorage.setItem("token", response);
+          toast.success("Login Successful!!");
+          resetFormFields();
+          dispatch(setCurrentUserAction({ email }));
+          navigate("/dashboard", { replace: true });
+        },
+        (error) => {
+          toast.error(error.response.data.error);
+        }
+      );
     } catch (error) {
-      if (error.response && error.response.status >= 400 && error.response.status <= 500) {
-        toast.error(error.response.data.message);
-      }
-      // switch (error.code) {
-      //   case 'auth/wrong-password':
-      //     toast.error('Incorrect password for email');
-      //     break;
-      //   case 'auth/user-not-found':
-      //     toast.error('No user is authenticated with this email id');
-      //     break;
-      //   default:
-      //     toast.error('Error while signing in: ', error);
-      // }
+      toast.error(error);
     }
   };
 
   const forgotPasswordHandler = () => {
-    navigate('/forgotpassword');
+    navigate("/forgotpassword");
   };
 
   return (
@@ -74,7 +65,7 @@ export default function LoginForm() {
           <TextField
             name="email"
             label="Email address"
-            type={'email'}
+            type={"email"}
             required
             id="email_textfield"
             variant="outlined"
@@ -85,7 +76,7 @@ export default function LoginForm() {
           <TextField
             name="password"
             label="Password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             required
             id="password_textfield"
             variant="outlined"
@@ -95,7 +86,7 @@ export default function LoginForm() {
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+                    <Iconify icon={showPassword ? "eva:eye-fill" : "eva:eye-off-fill"} />
                   </IconButton>
                 </InputAdornment>
               ),
@@ -109,13 +100,13 @@ export default function LoginForm() {
             underline="hover"
             sx={{ ml: 19, marginLeft: `auto` }}
             onClick={forgotPasswordHandler}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: "pointer" }}
           >
             Forgot password?
           </Link>
         </Stack>
 
-        <LoadingButton fullWidth size="large" type="submit" variant="contained" style={{ backgroundColor: '#48B2E3' }}>
+        <LoadingButton fullWidth size="large" type="submit" variant="contained" style={{ backgroundColor: "#48B2E3" }}>
           Login
         </LoadingButton>
       </form>
