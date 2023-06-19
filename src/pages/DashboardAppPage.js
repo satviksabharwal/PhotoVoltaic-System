@@ -1,13 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
 // import { faker } from '@faker-js/faker';
 // @mui
 // import { useTheme } from '@mui/material/styles';
-import { Grid, Container, Typography } from "@mui/material";
+import { Grid, Container, Typography, Button, Modal, Box, TextField } from "@mui/material";
 // selector
 import { selectCurrentUser } from "../store/user/user.selector";
+
 // components
 // import Iconify from '../components/iconify';
 // sections
@@ -31,7 +32,7 @@ export default function DashboardAppPage() {
   const currentUser = useSelector(selectCurrentUser);
 
   useEffect(() => {
-    if (currentUser.email === undefined) {
+    if (currentUser === undefined && currentUser.email === undefined) {
       navigate("/login");
     }
   }, [currentUser.email]);
@@ -42,11 +43,10 @@ export default function DashboardAppPage() {
         <title> Dashboard | Minimal UI </title>
       </Helmet>
 
-      <Container maxWidth="xl">
+      <Container maxWidth="l">
         <Typography variant="h4" sx={{ mb: 5 }}>
-          Hi, Welcome back, {currentUser && currentUser.displayName}!
+          Hi, Welcome back, {currentUser && currentUser.email}!
         </Typography>
-
         {/* <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
             <AppWidgetSummary title="Weekly Sales" total={714000} icon={'ant-design:android-filled'} />
