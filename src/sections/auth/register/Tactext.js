@@ -1,15 +1,15 @@
-import React from 'react';
-import { Typography } from '@mui/material';
+import React from "react";
+import { Typography } from "@mui/material";
 
 const Tactext = () => (
   <Typography
     sx={{
-      color: '#fff',
-      overflowY: 'scroll',
-      height: '70vh',
-      backgroundColor: '#48B2E3',
-      padding: '10px 25px 25px 25px',
-      borderRadius: '20px',
+      color: "#fff",
+      overflowY: "scroll",
+      height: "70vh",
+      backgroundColor: "#48B2E3",
+      padding: "10px 25px 25px 25px",
+      borderRadius: "20px",
     }}
   >
     <h3>Data Privacy Statement</h3>
@@ -79,7 +79,7 @@ const Tactext = () => (
     <br />
     <strong>Contact Us</strong>
     <br />
-    If you have any questions about this privacy policy or the personal data we collect and use, please contact us at{' '}
+    If you have any questions about this privacy policy or the personal data we collect and use, please contact us at{" "}
     <strong>satviksabharwal7@gmail.com</strong>.
     <br />
     <br />
