@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 // @mui
@@ -23,8 +23,8 @@ export default function ProfileSettingForm() {
   const { oldPassword, newPassword, confirmNewPassword } = formFields;
   const currentUser = useSelector(selectCurrentUser);
 
-  let providerId = "";
-  if (currentUser.providerData) providerId = currentUser.providerData[0]?.providerId;
+  // let providerId = "";
+  // if (currentUser.providerData) providerId = currentUser.providerData[0]?.providerId;
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -106,19 +106,19 @@ export default function ProfileSettingForm() {
           // localStorage.setItem("token", response);
           toast.success(response.data.message);
           dispatch(setCurrentUserAction({ undefined }));
-          resetFormFields();
-          window.localStorage.clear();
-          navigate("/login", { replace: true });
         },
         (error) => {
           toast.error(error.response.data.error);
         }
       );
+      resetFormFields();
+      window.localStorage.clear();
+      navigate("/login", { replace: true });
     } catch (error) {
       toast.error(error);
     }
   };
-
+  useEffect(() => {}, [currentUser]);
   return (
     <>
       <form onSubmit={handleRegister}>
@@ -145,7 +145,7 @@ export default function ProfileSettingForm() {
             defaultValue={currentUser ? currentUser?.email : ""}
             disabled
           />
-          {providerId === "password" ? (
+          {/* {providerId === "password" ? (
             <>
               <TextField
                 name="oldPassword"
@@ -185,7 +185,7 @@ export default function ProfileSettingForm() {
                 onChange={handleChange}
               />
             </>
-          ) : null}
+          ) : null} */}
         </Stack>
 
         <Stack direction="row" alignItems="center" justifyContent="flex-start" sx={{ my: 2 }}>
@@ -200,7 +200,7 @@ export default function ProfileSettingForm() {
           />
           <Typography style={{ fontSize: 14, color: "GrayText" }}>Are you sure? </Typography>
         </Stack>
-        {providerId === "password" ? (
+        {/* {providerId === "password" ? (
           <LoadingButton
             fullWidth
             size="large"
@@ -211,7 +211,7 @@ export default function ProfileSettingForm() {
           >
             Change Password
           </LoadingButton>
-        ) : null}
+        ) : null} */}
         <LoadingButton
           fullWidth
           size="large"
