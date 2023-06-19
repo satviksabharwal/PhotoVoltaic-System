@@ -51,7 +51,6 @@ export default function AccountPopover() {
     dispatch(setCurrentUserAction({ undefined }));
     // clear values after logout!
     window.localStorage.clear();
-    navigate("/login", { replace: true });
   };
 
   return (
