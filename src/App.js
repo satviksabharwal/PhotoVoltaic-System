@@ -9,12 +9,6 @@ import ThemeProvider from "./theme";
 // components
 import ScrollToTop from "./components/scroll-to-top";
 import { StyledChart } from "./components/chart";
-// firebase methods
-import {
-  createUserDocumentFromAuth,
-  onAuthStateChangedListener,
-  getSingleDocument,
-} from "./utils/firebase/firebase.utils";
 import { selectCurrentUser } from "./store/user/user.selector";
 // actions
 import { setCurrentUserAction } from "./store/user/user.action";
@@ -28,30 +22,6 @@ export default function App() {
   const currentUser = useSelector(selectCurrentUser);
   const location = useLocation();
 
-  // const [currentUserMetadata, setUserMetadata] = useState({
-  //   userEmail: '',
-  //   userFirebaseId: '',
-  //   userId: '',
-  //   userRole: 'normal',
-  //   userStorageUsed: 0,
-  //   userVersion: 'free',
-  // });
-  // const [ownedFilesMetadata, setOwnedFilesMetadata] = useState([]);
-
-  // useEffect(() => {
-  //   const unsubscribe = onAuthStateChangedListener(async (user) => {
-  //     let displayName;
-  //     if (user) {
-  //       await createUserDocumentFromAuth(user);
-  //       const userDoc = await getSingleDocument('users', user && user.uid);
-  //       displayName = userDoc && userDoc.displayName;
-  //     }
-
-  //     dispatch(setCurrentUserAction({ ...user, displayName }));
-  //   });
-  //   return unsubscribe;
-  // }, [dispatch]);
-
   useEffect(() => {
     if (
       (location.pathname === "/login" ||
@@ -62,8 +32,9 @@ export default function App() {
       currentUser.email !== undefined
     ) {
       navigate("/dashboard/app");
-    } else if (currentUser?.email === undefined) {
-      if (location.pathname === "/dashboard/app") navigate("/login");
+    } else if (currentUser === undefined || currentUser?.email === undefined) {
+      if (location.pathname === "/dashboard/app" || location.pathname === "/dashboard/profile-setting")
+        navigate("/login");
       else navigate(location.pathname);
     }
   }, [location.pathname, currentUser?.email]);
