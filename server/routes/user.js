@@ -50,10 +50,41 @@ router.post("/login", async (req, res) => {
     // Generate a JSON Web Token (JWT)
     const token = jwt.sign({ userId: user._id }, "secretKey");
 
-    res.json({ token });
+    res.json({ displayName: user?.displayName, token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error!" });
+  }
+});
+
+// Change Password API
+router.post("/change-password", async (req, res) => {
+  const { email, oldPassword, newPassword } = req.body;
+
+  try {
+    // Check if the user with the provided email exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Compare the old password provided with the stored password
+    const isPasswordCorrect = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ message: "Incorrect old password" });
+    }
+
+    // Hash the new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password in the database
+    user.password = hashedNewPassword;
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Error in change password API:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
