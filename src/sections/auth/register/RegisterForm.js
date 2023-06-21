@@ -28,7 +28,6 @@ export default function RegisterForm() {
   const resetFormFields = () => {
     setFormFields(defaultFormFields);
   };
-
   const handleRegister = async (event) => {
     event.preventDefault();
     if (password !== confirmPassword) {

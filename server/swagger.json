@@ -342,6 +342,58 @@
           }
         }
       }
+    },
+    "/api/product/create": {
+      "post": {
+        "summary": "Create a new product",
+        "tags": ["Product"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Product data",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateProductRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product created successfully"
+          },
+          "400": {
+            "description": "Product name already exists"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/product": {
+      "get": {
+        "summary": "Get all product",
+        "tags": [
+          "Product"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -390,6 +442,46 @@
           "type": "string"
         }
       }
+    },
+    "CreateProductRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "powerPeak": {
+          "type": "number"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["N", "E", "S", "W"]
+        },
+        "inclination": {
+          "type": "number"
+        },
+        "area": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "project": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "powerPeak",
+        "orientation",
+        "inclination",
+        "area",
+        "longitude",
+        "latitude",
+        "project"
+      ]
     }
   }
 }
