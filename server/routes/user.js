@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import {verifyToken} from "../commonFunctions.js"
 import { User } from "../db/index.js";
 
 const router = express.Router();
@@ -88,7 +89,7 @@ router.post("/change-password", async (req, res) => {
   }
 });
 
-router.delete("/:email", async (req, res) => {
+router.delete("/:email",verifyToken, async (req, res) => {
   const { email } = req.params;
 
   try {

@@ -1,5 +1,5 @@
 import express from "express";
-import {verifyToken} from "../commonFunctions.js"
+import {verifyToken, getUserIdFromtoken} from "../commonFunctions.js"
 import { Project } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -9,7 +9,8 @@ const router = express.Router();
 router.get("/", verifyToken, async(req, res) => {
   try {
     // Retrieve all projects from the database
-    const projects = await Project.find();
+    const user = getUserIdFromtoken(req);
+    const projects = await Project.find({user});
     res.json(projects);
   } catch (error) {
     console.error("Error in get all projects API:", error);
@@ -22,8 +23,8 @@ router.post("/create", verifyToken, async (req, res) => {
 
     // Extract project name from the request body
     const { name } = req.body;
-
-    const existingProject = await Project.findOne({ name });
+    const user = getUserIdFromtoken(req);
+    const existingProject = await Project.findOne({ name, user });
     if (existingProject) {
       return res.status(400).json({ error: "Project name already exists!" });
     }
@@ -34,7 +35,8 @@ router.post("/create", verifyToken, async (req, res) => {
     // Create a new project
     const project = new Project({
       id,
-      name
+      name,
+      user
     });
 
     // Save the project to the database
@@ -55,8 +57,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
 
     // Extract updated project details from the request body
     const { name } = req.body;
+    const user = getUserIdFromtoken(req);
 
-    const existingProject = await Project.findOne({ name });
+    const haveAccess = await Project.findOne({ user, id });
+    if (!haveAccess) {
+      return res.status(400).json({ error: "Unauthorized" });
+    }
+
+    const existingProject = await Project.findOne({ name, id });
     if (existingProject) {
       return res.status(400).json({ error: "Project name already exists!" });
     }
@@ -79,6 +87,11 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
   try {
     // Extract project ID from the request parameters
     const { id } = req.params;
+
+    const haveAccess = await Project.findOne({ user, id });
+    if (!haveAccess) {
+      return res.status(400).json({ error: "Unauthorized" });
+    }
 
     // Delete the project by ID
     const result = await Project.deleteOne({ id });

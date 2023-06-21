@@ -21,3 +21,20 @@ export function verifyToken(req, res, next) {
     next();
   });
 }
+
+export function getUserIdFromtoken(req){
+
+  const token = req.header("Authorization");
+  if (!token) {
+    return undefined;
+  }
+
+  try {
+    const decoded = jwt.verify(token, "secretKey");
+    const userId = decoded.userId;
+    return userId;
+  } catch (error) {
+    console.error(error);
+    return undefined;
+  }
+}
