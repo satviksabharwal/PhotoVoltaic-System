@@ -10,7 +10,7 @@ export const projectSchema = new mongoose.Schema(
   {
     versionKey: false,
     toJSON: {
-      transform: function (doc, ret) {
+      transform(doc, ret) {
         delete ret._id;
         delete ret.__v;
         delete ret.user;

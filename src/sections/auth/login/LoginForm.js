@@ -37,11 +37,12 @@ export default function LoginForm() {
       const url = "http://localhost:5500/api/user/login";
       await axios.post(url, { email, password }).then(
         (response) => {
-          console.log(response);
           // localStorage.setItem("token", response);
           toast.success("Login Successful!!");
           resetFormFields();
-          dispatch(setCurrentUserAction({ email }));
+          const tokenId = response?.data?.token;
+          const displayName = response?.data?.displayName;
+          dispatch(setCurrentUserAction({ tokenId, displayName, email }));
           navigate("/dashboard", { replace: true });
         },
         (error) => {
