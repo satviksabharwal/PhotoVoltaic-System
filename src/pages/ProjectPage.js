@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 // @mui
-import { Box, Button, Container, Modal, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Container, Modal, TextField, Typography } from "@mui/material";
 // components
 import { LoadingButton } from "@mui/lab";
 import { toast } from "react-toastify";
@@ -23,6 +23,7 @@ const style = {
 export default function ProjectPage() {
   const [open, setOpen] = useState(false);
   const [formField, setFormField] = useState("");
+  const [projectData, setProjectData] = useState([]);
   const handleOpen = () => {
     setOpen(true);
   };
@@ -39,6 +40,7 @@ export default function ProjectPage() {
 
   const handleRegister = async (event) => {
     event.preventDefault();
+    setProjectData([...projectData, formField]);
     toast.success(formField);
     setOpen(false);
     resetFormFields();
