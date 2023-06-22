@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
@@ -35,7 +35,7 @@ export default function DashboardAppPage() {
     if (currentUser === undefined && currentUser.email === undefined) {
       navigate("/login");
     }
-  }, [currentUser.email]);
+  }, [currentUser?.email]);
 
   return (
     <>

@@ -1,10 +1,14 @@
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 // @mui
 import { Box, Button, Container, Modal, TextField, Typography } from "@mui/material";
 // components
 import { LoadingButton } from "@mui/lab";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { selectCurrentUser } from "../store/user/user.selector";
+import FolderContainer from "./FolderContainer";
 
 // ----------------------------------------------------------------------
 
@@ -23,7 +27,8 @@ const style = {
 export default function ProjectPage() {
   const [open, setOpen] = useState(false);
   const [formField, setFormField] = useState("");
-  const [projectData, setProjectData] = useState([]);
+  const [projectData, setProjectData] = useState([{}]);
+  const currentUser = useSelector(selectCurrentUser);
   const handleOpen = () => {
     setOpen(true);
   };
@@ -40,11 +45,53 @@ export default function ProjectPage() {
 
   const handleRegister = async (event) => {
     event.preventDefault();
-    setProjectData([...projectData, formField]);
-    toast.success(formField);
-    setOpen(false);
-    resetFormFields();
+    try {
+      const url = "http://localhost:5500/api/project/create";
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      await axios.post(url, { name: formField }, config).then(
+        (response) => {
+          // localStorage.setItem("token", response);
+          console.log(response);
+          toast.success(response.data.message);
+          resetFormFields();
+          setOpen(false);
+          fetchApiCall();
+        },
+        (error) => {
+          toast.error(error.response.data.error);
+        }
+      );
+    } catch (error) {
+      toast.error(error);
+    }
   };
+
+  const fetchApiCall = () => {
+    try {
+      const url = "http://localhost:5500/api/project";
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      axios.get(url, config).then(
+        (response) => {
+          // localStorage.setItem("token", response);
+          console.log(response.data);
+          setProjectData(response.data);
+        },
+        (error) => {
+          toast.error(error.response.data.error);
+        }
+      );
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchApiCall();
+  }, []);
 
   return (
     <>
@@ -92,6 +139,25 @@ export default function ProjectPage() {
             </form>
           </Box>
         </Modal>
+        <Box
+          sx={{
+            minWidth: 150,
+            maxHeight: "calc(100vh - 50px)",
+            marginTop: "50px",
+            display: "flex",
+            columnGap: "50px",
+            cursor: "pointer",
+            flexWrap: "wrap",
+          }}
+        >
+          {projectData?.length > 0 ? (
+            projectData?.map((project) => (
+              <FolderContainer folderName={project?.name} folderId={project?.id} key={project?.id} />
+            ))
+          ) : (
+            <></>
+          )}
+        </Box>
       </Container>
     </>
   );
