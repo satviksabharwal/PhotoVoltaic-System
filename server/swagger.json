@@ -200,33 +200,6 @@
         }
       }
     },
-    "/api/project": {
-      "get": {
-        "summary": "Get all projects",
-        "tags": [
-          "Project"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful operation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Project"
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
     "/api/project/create": {
       "post": {
         "summary": "Create a project",
@@ -258,6 +231,33 @@
           },
           "400": {
             "description": "Project name already exists!"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/project": {
+      "get": {
+        "summary": "Get all projects",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Project"
+              }
+            }
           },
           "500": {
             "description": "Internal server error"
@@ -394,6 +394,81 @@
           }
         }
       }
+    },
+    "/api/product/update/{id}": {
+      "put": {
+        "summary": "Update a product",
+        "tags": [
+          "Product"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of the product to update",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "product",
+            "in": "body",
+            "description": "Updated product details",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateProduct"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project updated successfully"
+          },
+          "404": {
+            "description": "Project not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/product/delete/{id}": {
+      "delete": {
+        "summary": "Delete a product",
+        "tags": [
+          "Product"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of the product to delete",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Product deleted successfully"
+          },
+          "404": {
+            "description": "Product not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -481,6 +556,42 @@
         "longitude",
         "latitude",
         "project"
+      ]
+    },
+    "UpdateProduct": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "powerPeak": {
+          "type": "number"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["N", "E", "S", "W"]
+        },
+        "inclination": {
+          "type": "number"
+        },
+        "area": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "latitude": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "powerPeak",
+        "orientation",
+        "inclination",
+        "area",
+        "longitude",
+        "latitude"
       ]
     }
   }

@@ -1,6 +1,6 @@
 import express from "express";
 import {verifyToken, getUserIdFromtoken} from "../commonFunctions.js"
-import { Project } from "../db/index.js";
+import { Product, Project } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
 const router = express.Router();
@@ -87,14 +87,20 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
   try {
     // Extract project ID from the request parameters
     const { id } = req.params;
-
+    const user = getUserIdFromtoken(req);
     const haveAccess = await Project.findOne({ user, id });
     if (!haveAccess) {
       return res.status(400).json({ error: "Unauthorized" });
     }
 
     // Delete the project by ID
-    const result = await Project.deleteOne({ id });
+
+    const result = await Promise.all([
+      Project.deleteOne({ id }),
+      Product.deleteMany({ project: id })
+    ]);
+
+    // await Project.deleteOne({ id });
 
     if (result.deletedCount === 0) {
       return res.status(404).json({ message: "Project not found" });
