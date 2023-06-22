@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import Paper from "@mui/material/Paper";
 import { StyledTableCell, StyledTableRow } from "./TableContainer.styled";
 
-const ProductTableContainer = (productdata) => {
-  const [productData, setProductData] = useState();
+const ProductTableContainer = (productData) => {
+  // const [tableData, setTableData] = useState(productData.productData);
+  console.log(productData?.productData?.length);
 
   return (
     <TableContainer component={Paper}>
@@ -21,8 +22,8 @@ const ProductTableContainer = (productdata) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {productdata.length > 0 ? (
-            productdata.map((data, index) => (
+          {productData?.productData?.length > 0 ? (
+            productData?.productData?.map((data, index) => (
               <StyledTableRow key={index}>
                 <StyledTableCell component="th" scope="row">
                   {data.name}

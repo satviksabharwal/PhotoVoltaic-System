@@ -38,14 +38,14 @@ const defaultFormFields = {
 const ProductPage = () => {
   const { state } = useLocation();
   const params = useParams();
-  const [productdata, setProductData] = useState();
+  const [productData, setProductData] = useState();
   const [open, setOpen] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const [formFieldModal, setFormFieldModal] = useState("");
   const [buttonType, setButtonType] = useState("");
   const currentUser = useSelector(selectCurrentUser);
   const navigate = useNavigate();
-  const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
+  // const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
 
   const handleOpen = () => {
     setOpen(true);
@@ -153,7 +153,6 @@ const ProductPage = () => {
       };
       axios.get(url, config).then(
         (response) => {
-          console.log(response.data);
           setProductData(response.data);
         },
         (error) => {
@@ -373,7 +372,7 @@ const ProductPage = () => {
         ) : (
           <></>
         )}
-        <ProductTableContainer productdata={productdata} />
+        <ProductTableContainer productData={productData} />
       </Container>
     </>
   );
