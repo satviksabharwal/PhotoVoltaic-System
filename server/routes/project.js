@@ -10,7 +10,14 @@ router.get("/", verifyToken, async(req, res) => {
   try {
     // Retrieve all projects from the database
     const user = getUserIdFromtoken(req);
-    const projects = await Project.find({user});
+    const project = req.query.projectId;
+    let projects;
+    if(project){
+      projects = await Project.findOne({user, id: project});
+    } else {
+      projects = await Project.find({user});
+    }
+    
     res.json(projects);
   } catch (error) {
     console.error("Error in get all projects API:", error);
@@ -75,7 +82,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     if (result.n === 0) {
       return res.status(404).json({ message: "Project not found" });
     }
-    res.json({ message: "Project updated successfully" });
+    res.json({ message: "Project updated successfully" , result: {name : name }} );
   } catch (error) {
     console.error("Error in update project API:", error);
     res.status(500).json({ message: "Internal server error" });
