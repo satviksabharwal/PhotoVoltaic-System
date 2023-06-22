@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export const productSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     powerPeak: { type: Number, required: true },
     orientation: { type: String, enum: ["N", "E", "S", "W"], required: true },
     inclination: { type: Number, required: true },
