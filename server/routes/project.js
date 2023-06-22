@@ -64,7 +64,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Unauthorized" });
     }
 
-    const existingProject = await Project.findOne({ name, id });
+    const existingProject = await Project.findOne({ name, user });
     if (existingProject) {
       return res.status(400).json({ error: "Project name already exists!" });
     }
