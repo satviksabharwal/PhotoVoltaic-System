@@ -387,6 +387,15 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "ProjectId to get products",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "responses": {
           
           "500": {
