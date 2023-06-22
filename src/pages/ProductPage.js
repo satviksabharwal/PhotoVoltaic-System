@@ -26,26 +26,25 @@ const style = {
 };
 
 const defaultFormFields = {
-  latitude: null,
-  longitude: null,
+  latitude: "",
+  longitude: "",
   productName: "",
-  powerPeak: null,
+  powerPeak: "",
   orientation: "",
-  inclination: null,
-  area: null,
+  inclination: "",
+  area: "",
 };
 
 const ProductPage = () => {
-  const { state } = useLocation();
   const params = useParams();
   const [productData, setProductData] = useState();
+  const [projectName, setProjectName] = useState("");
   const [open, setOpen] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const [formFieldModal, setFormFieldModal] = useState("");
   const [buttonType, setButtonType] = useState("");
   const currentUser = useSelector(selectCurrentUser);
   const navigate = useNavigate();
-  // const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
 
   const handleOpen = () => {
     setOpen(true);
@@ -62,7 +61,7 @@ const ProductPage = () => {
     setFormFieldModal(event.target.value);
   };
   const resetFormFields = () => {
-    setFormFields("");
+    setFormFields(defaultFormFields);
   };
   const resetFormFieldsModal = () => {
     setFormFieldModal("");
@@ -75,6 +74,25 @@ const ProductPage = () => {
   const deletehandle = () => {
     setButtonType("delete");
     handleOpen();
+  };
+
+  const fetchNewProjectName = async () => {
+    try {
+      const url = `http://localhost:5500/api/project?projectId=${params.id}`;
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      await axios.get(url, config).then(
+        (response) => {
+          setProjectName(response.data.name);
+        },
+        (error) => {
+          toast.error(error.data.message);
+        }
+      );
+    } catch (error) {
+      toast.error(error);
+    }
   };
 
   const deleteModalHandle = async (event) => {
@@ -112,10 +130,11 @@ const ProductPage = () => {
           console.log(response);
           toast.success(response.data.message);
           resetFormFieldsModal();
+          fetchNewProjectName(event);
           setOpen(false);
         },
         (error) => {
-          toast.error(error.data.message);
+          toast.error(error.message);
         }
       );
     } catch (error) {
@@ -130,29 +149,48 @@ const ProductPage = () => {
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.post(url, formFields, config).then(
-        (response) => {
-          console.log(response);
-          toast.success(response.data.message);
-          resetFormFields();
-        },
-        (error) => {
-          toast.error(error.message);
-        }
-      );
+      const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
+      await axios
+        .post(
+          url,
+          {
+            latitude: +latitude,
+            longitude: +longitude,
+            name: productName,
+            powerPeak: +powerPeak,
+            orientation,
+            inclination: +inclination,
+            area: +area,
+            project: params?.id,
+          },
+          config
+        )
+        .then(
+          (response) => {
+            console.log(response);
+            toast.success(response.data.message);
+            getAllProductData();
+            resetFormFields();
+          },
+          (error) => {
+            toast.error(error.message);
+          }
+        );
     } catch (error) {
       toast.error(error);
     }
   };
 
-  useEffect(() => {
+  const getAllProductData = () => {
     try {
-      const url = `http://localhost:5500/api/product`;
+      const url = `http://localhost:5500/api/product?projectId=${params?.id}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
+      fetchNewProjectName();
       axios.get(url, config).then(
         (response) => {
+          console.log(response);
           setProductData(response.data);
         },
         (error) => {
@@ -162,6 +200,10 @@ const ProductPage = () => {
     } catch (error) {
       toast.error(error);
     }
+  };
+
+  useEffect(() => {
+    getAllProductData();
   }, []);
 
   const position = [
@@ -172,12 +214,12 @@ const ProductPage = () => {
   return (
     <>
       <Helmet>
-        <title>{`Dashboard: ${state}`}</title>
+        <title>{`Dashboard: ${projectName}`}</title>
       </Helmet>
       <Container maxWidth="l">
         <Container maxWidth="l" sx={{ display: "flex" }}>
           <Typography variant="h4" sx={{ mb: 5 }}>
-            {state}
+            {projectName}
           </Typography>
           <Tooltip title="Click To Update Project name.">
             <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={editHandle}>
@@ -195,7 +237,7 @@ const ProductPage = () => {
             center={[50.8282, 12.9209]}
             zoom={7}
             scrollWheelZoom={false}
-            style={{ maxHeight: "575px", maxWidth: "1400px", marginLeft: "0px", marginRight: "30px" }}
+            style={{ maxHeight: "560px", marginLeft: "0px", marginRight: "30px", flex: "0.7" }}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -207,7 +249,7 @@ const ProductPage = () => {
           </MapContainer>
           <form
             onSubmit={handleCreateProduct}
-            style={{ marginRight: "0px", marginLeft: "auto", maxWidth: "800px", width: "100%" }}
+            style={{ marginRight: "0px", marginLeft: "auto", width: "100%", flex: "0.3" }}
           >
             <ToastContainer />
 
