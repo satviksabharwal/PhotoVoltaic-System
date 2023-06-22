@@ -55,8 +55,13 @@ router.get("/", verifyToken, async(req, res) => {
   try {
     // Retrieve all Products from the database
     const user = getUserIdFromtoken(req);
-    const projects = await Product.find({user});
-    res.json(projects);
+    const project = req.query.projectId;
+    const options = {user}
+    if(project){
+      options['project'] = project
+    }
+    const products = await Product.find(options);
+    res.json(products);
   } catch (error) {
     console.error("Error in get all products API:", error);
     res.status(500).json({ message: "Internal server error" });
