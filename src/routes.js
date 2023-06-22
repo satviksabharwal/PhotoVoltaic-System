@@ -13,6 +13,7 @@ import ProfileSetting from "./pages/ProfileSetting";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProjectPage from "./pages/ProjectPage";
 import VisualMap from "./pages/VisualMap";
+import ProductPage from "./pages/ProductPage";
 
 // ----------------------------------------------------------------------
 
@@ -27,6 +28,7 @@ export default function Router() {
         { path: "visualmap", element: <VisualMap /> },
         { path: "profile-setting", element: <ProfileSetting /> },
         { path: "projects", element: <ProjectPage /> },
+        { path: "projects/:id", element: <ProductPage /> },
       ],
     },
     {
