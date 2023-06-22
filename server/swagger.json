@@ -249,6 +249,15 @@
             "BearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "description": "ProjectId to get projects",
+            "required": false,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful operation",
