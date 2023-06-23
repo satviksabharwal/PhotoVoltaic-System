@@ -40,6 +40,7 @@ const ProductPage = () => {
   const [productData, setProductData] = useState();
   const [projectName, setProjectName] = useState("");
   const [open, setOpen] = useState(false);
+  const [isProductUpdated, setIsProductUpdated] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const [formFieldModal, setFormFieldModal] = useState("");
   const [buttonType, setButtonType] = useState("");
@@ -104,7 +105,6 @@ const ProductPage = () => {
       };
       await axios.delete(url, config).then(
         (response) => {
-          console.log(response);
           toast.success(response.data.message);
           setOpen(false);
           navigate("/dashboard/projects");
@@ -127,7 +127,6 @@ const ProductPage = () => {
       };
       await axios.put(url, { name: formFieldModal }, config).then(
         (response) => {
-          console.log(response);
           toast.success(response.data.message);
           resetFormFieldsModal();
           fetchNewProjectName(event);
@@ -167,10 +166,9 @@ const ProductPage = () => {
         )
         .then(
           (response) => {
-            console.log(response);
             toast.success(response.data.message);
-            getAllProductData();
             resetFormFields();
+            setIsProductUpdated(true);
           },
           (error) => {
             toast.error(error.message);
@@ -181,7 +179,7 @@ const ProductPage = () => {
     }
   };
 
-  const getAllProductData = () => {
+  const getAllProductLocation = () => {
     try {
       const url = `http://localhost:5500/api/product?projectId=${params?.id}`;
       const config = {
@@ -190,7 +188,6 @@ const ProductPage = () => {
       fetchNewProjectName();
       axios.get(url, config).then(
         (response) => {
-          console.log(response);
           setProductData(response.data);
         },
         (error) => {
@@ -203,13 +200,9 @@ const ProductPage = () => {
   };
 
   useEffect(() => {
-    getAllProductData();
+    getAllProductLocation();
+    fetchNewProjectName();
   }, []);
-
-  const position = [
-    [50.8282, 12.9209],
-    [52.52, 13.405],
-  ];
 
   return (
     <>
@@ -243,16 +236,14 @@ const ProductPage = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {position.map((pos, index) => (
-              <Marker position={pos} key={index} />
+            {productData?.map((product) => (
+              <Marker position={[product?.latitude, product?.longitude]} key={product?.id} />
             ))}
           </MapContainer>
           <form
             onSubmit={handleCreateProduct}
             style={{ marginRight: "0px", marginLeft: "auto", width: "100%", flex: "0.3" }}
           >
-            <ToastContainer />
-
             <Stack spacing={2}>
               <TextField
                 name="latitude"
@@ -414,7 +405,7 @@ const ProductPage = () => {
         ) : (
           <></>
         )}
-        <ProductTableContainer productData={productData} />
+        <ProductTableContainer isProductUpdated={isProductUpdated} />
       </Container>
     </>
   );
