@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -237,7 +237,11 @@ const ProductPage = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {productData?.map((product) => (
-              <Marker position={[product?.latitude, product?.longitude]} key={product?.id} />
+              <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
+                <Popup>
+                  <h3 style={{ textAlign: "center" }}>{product.name}</h3>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
           <form
