@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+// import { useNavigate } from "react-router-dom";
 // @mui
 import { Box, Button, Container, Modal, TextField, Typography } from "@mui/material";
 // components
@@ -29,6 +30,7 @@ export default function ProjectPage() {
   const [formField, setFormField] = useState("");
   const [projectData, setProjectData] = useState([{}]);
   const currentUser = useSelector(selectCurrentUser);
+  // const navigate = useNavigate();
   const handleOpen = () => {
     setOpen(true);
   };
@@ -76,8 +78,6 @@ export default function ProjectPage() {
       };
       axios.get(url, config).then(
         (response) => {
-          // localStorage.setItem("token", response);
-          console.log(response.data);
           setProjectData(response.data);
         },
         (error) => {
@@ -146,16 +146,15 @@ export default function ProjectPage() {
             marginTop: "50px",
             display: "flex",
             columnGap: "50px",
-            cursor: "pointer",
             flexWrap: "wrap",
           }}
         >
-          {projectData?.length > 0 ? (
-            projectData?.map((project) => (
+          {projectData?.map((project) =>
+            project?.name && project?.id ? (
               <FolderContainer folderName={project?.name} folderId={project?.id} key={project?.id} />
-            ))
-          ) : (
-            <></>
+            ) : (
+              <></>
+            )
           )}
         </Box>
       </Container>

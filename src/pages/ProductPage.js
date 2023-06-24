@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -26,26 +26,26 @@ const style = {
 };
 
 const defaultFormFields = {
-  latitude: null,
-  longitude: null,
+  latitude: "",
+  longitude: "",
   productName: "",
-  powerPeak: null,
+  powerPeak: "",
   orientation: "",
-  inclination: null,
-  area: null,
+  inclination: "",
+  area: "",
 };
 
 const ProductPage = () => {
-  const { state } = useLocation();
   const params = useParams();
   const [productData, setProductData] = useState();
+  const [projectName, setProjectName] = useState("");
   const [open, setOpen] = useState(false);
+  const [isProductUpdated, setIsProductUpdated] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const [formFieldModal, setFormFieldModal] = useState("");
   const [buttonType, setButtonType] = useState("");
   const currentUser = useSelector(selectCurrentUser);
   const navigate = useNavigate();
-  // const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
 
   const handleOpen = () => {
     setOpen(true);
@@ -62,7 +62,7 @@ const ProductPage = () => {
     setFormFieldModal(event.target.value);
   };
   const resetFormFields = () => {
-    setFormFields("");
+    setFormFields(defaultFormFields);
   };
   const resetFormFieldsModal = () => {
     setFormFieldModal("");
@@ -77,6 +77,25 @@ const ProductPage = () => {
     handleOpen();
   };
 
+  const fetchNewProjectName = async () => {
+    try {
+      const url = `http://localhost:5500/api/project?projectId=${params.id}`;
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      await axios.get(url, config).then(
+        (response) => {
+          setProjectName(response.data.name);
+        },
+        (error) => {
+          toast.error(error.data.message);
+        }
+      );
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
   const deleteModalHandle = async (event) => {
     event.preventDefault();
     try {
@@ -86,7 +105,6 @@ const ProductPage = () => {
       };
       await axios.delete(url, config).then(
         (response) => {
-          console.log(response);
           toast.success(response.data.message);
           setOpen(false);
           navigate("/dashboard/projects");
@@ -109,13 +127,13 @@ const ProductPage = () => {
       };
       await axios.put(url, { name: formFieldModal }, config).then(
         (response) => {
-          console.log(response);
           toast.success(response.data.message);
           resetFormFieldsModal();
+          fetchNewProjectName(event);
           setOpen(false);
         },
         (error) => {
-          toast.error(error.data.message);
+          toast.error(error.message);
         }
       );
     } catch (error) {
@@ -130,27 +148,44 @@ const ProductPage = () => {
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.post(url, formFields, config).then(
-        (response) => {
-          console.log(response);
-          toast.success(response.data.message);
-          resetFormFields();
-        },
-        (error) => {
-          toast.error(error.message);
-        }
-      );
+      const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
+      await axios
+        .post(
+          url,
+          {
+            latitude: +latitude,
+            longitude: +longitude,
+            name: productName,
+            powerPeak: +powerPeak,
+            orientation,
+            inclination: +inclination,
+            area: +area,
+            project: params?.id,
+          },
+          config
+        )
+        .then(
+          (response) => {
+            toast.success(response.data.message);
+            resetFormFields();
+            setIsProductUpdated(true);
+          },
+          (error) => {
+            toast.error(error.message);
+          }
+        );
     } catch (error) {
       toast.error(error);
     }
   };
 
-  useEffect(() => {
+  const getAllProductLocation = () => {
     try {
-      const url = `http://localhost:5500/api/product`;
+      const url = `http://localhost:5500/api/product?projectId=${params?.id}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
+      fetchNewProjectName();
       axios.get(url, config).then(
         (response) => {
           setProductData(response.data);
@@ -162,22 +197,22 @@ const ProductPage = () => {
     } catch (error) {
       toast.error(error);
     }
-  }, []);
+  };
 
-  const position = [
-    [50.8282, 12.9209],
-    [52.52, 13.405],
-  ];
+  useEffect(() => {
+    getAllProductLocation();
+    fetchNewProjectName();
+  }, []);
 
   return (
     <>
       <Helmet>
-        <title>{`Dashboard: ${state}`}</title>
+        <title>{`Dashboard: ${projectName}`}</title>
       </Helmet>
       <Container maxWidth="l">
         <Container maxWidth="l" sx={{ display: "flex" }}>
           <Typography variant="h4" sx={{ mb: 5 }}>
-            {state}
+            {projectName}
           </Typography>
           <Tooltip title="Click To Update Project name.">
             <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={editHandle}>
@@ -195,22 +230,24 @@ const ProductPage = () => {
             center={[50.8282, 12.9209]}
             zoom={7}
             scrollWheelZoom={false}
-            style={{ maxHeight: "575px", maxWidth: "1400px", marginLeft: "0px", marginRight: "30px" }}
+            style={{ maxHeight: "560px", marginLeft: "0px", marginRight: "30px", flex: "0.7" }}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {position.map((pos, index) => (
-              <Marker position={pos} key={index} />
+            {productData?.map((product) => (
+              <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
+                <Popup>
+                  <h3 style={{ textAlign: "center" }}>{product.name}</h3>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
           <form
             onSubmit={handleCreateProduct}
-            style={{ marginRight: "0px", marginLeft: "auto", maxWidth: "800px", width: "100%" }}
+            style={{ marginRight: "0px", marginLeft: "auto", width: "100%", flex: "0.3" }}
           >
-            <ToastContainer />
-
             <Stack spacing={2}>
               <TextField
                 name="latitude"
@@ -372,7 +409,7 @@ const ProductPage = () => {
         ) : (
           <></>
         )}
-        <ProductTableContainer productData={productData} />
+        <ProductTableContainer isProductUpdated={isProductUpdated} />
       </Container>
     </>
   );

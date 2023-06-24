@@ -31,17 +31,17 @@ const StyledChartWrapper = styled("div")(({ theme }) => ({
 
 // ----------------------------------------------------------------------
 
-Statistics.propTypes = {
+AppCurrentVisits.propTypes = {
   title: PropTypes.string,
   subheader: PropTypes.string,
   chartColors: PropTypes.arrayOf(PropTypes.string),
   chartData: PropTypes.array,
 };
 
-export default function Statistics({ title, subheader, chartColors, chartData, ...other }) {
+export default function AppCurrentVisits({ title, subheader, chartColors, chartData, ...other }) {
   const theme = useTheme();
 
-  const chartLabels = chartData.map((i) => `${i.label} (Megabytes)`);
+  const chartLabels = chartData.map((i) => i.label);
 
   const chartSeries = chartData.map((i) => i.value);
 
@@ -50,7 +50,7 @@ export default function Statistics({ title, subheader, chartColors, chartData, .
     labels: chartLabels,
     stroke: { colors: [theme.palette.background.paper] },
     legend: { floating: true, horizontalAlign: "center" },
-    dataLabels: { enabled: true, dropShadow: { enabled: true } },
+    dataLabels: { enabled: true, dropShadow: { enabled: false } },
     tooltip: {
       fillSeriesColor: false,
       y: {

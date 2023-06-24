@@ -17,7 +17,6 @@ import { setCurrentUserAction } from "./store/user/user.action";
 // export const CurrentUserMetadataContext = createContext({});
 
 export default function App() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const currentUser = useSelector(selectCurrentUser);
   const location = useLocation();
@@ -32,10 +31,16 @@ export default function App() {
       currentUser.email !== undefined
     ) {
       navigate("/dashboard/app");
-    } else if (currentUser === undefined || currentUser?.email === undefined) {
-      if (location.pathname === "/dashboard/app" || location.pathname === "/dashboard/profile-setting")
-        navigate("/login");
-      else navigate(location.pathname);
+    } else if (currentUser === undefined || currentUser.email === undefined) {
+      if (
+        (location.pathname === "/login" && currentUser?.email === undefined) ||
+        (location.pathname === "/register" && currentUser?.email === undefined) ||
+        (location.pathname === "/tac" && currentUser?.email === undefined) ||
+        (location.pathname === "/forgotpassword" && currentUser?.email === undefined) ||
+        (location.pathname === "/404" && currentUser?.email === undefined)
+      ) {
+        navigate(location.pathname);
+      } else navigate("/login");
     }
   }, [location.pathname, currentUser?.email]);
 
