@@ -6,8 +6,10 @@ import fs from "fs";
 import userRoutes from "./routes/user.js";
 import projectRoutes from "./routes/project.js";
 import productRoutes from "./routes/product.js";
+import {executeCorn} from "./cornCalculatePS.js";
 
 const rawData = fs.readFileSync("./swagger.json");
+
 const swaggerDocument = JSON.parse(rawData);
 
 const app = express();
@@ -45,3 +47,5 @@ app.get("/api/protected", (req, res) => {
 app.listen(5500, () => {
   console.log("Server started on http://localhost:5500");
 });
+
+executeCorn()
