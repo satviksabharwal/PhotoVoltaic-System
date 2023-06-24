@@ -7,12 +7,10 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import Page404 from "./pages/Page404";
 import DashboardAppPage from "./pages/DashboardAppPage";
-// import UploadPage from './pages/UploadPage';
 import TermsandConditions from "./sections/auth/register/TermsandConditions";
 import ProfileSetting from "./pages/ProfileSetting";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProjectPage from "./pages/ProjectPage";
-import VisualMap from "./pages/VisualMap";
 import ProductPage from "./pages/ProductPage";
 
 // ----------------------------------------------------------------------
@@ -25,7 +23,6 @@ export default function Router() {
       children: [
         { element: <Navigate to="/dashboard/app" />, index: true },
         { path: "app", element: <DashboardAppPage /> },
-        { path: "visualmap", element: <VisualMap /> },
         { path: "profile-setting", element: <ProfileSetting /> },
         { path: "projects", element: <ProjectPage /> },
         { path: "projects/:id", element: <ProductPage /> },
