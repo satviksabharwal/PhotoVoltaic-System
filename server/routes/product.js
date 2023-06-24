@@ -85,7 +85,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       return res.status(400).json({ error: "Unauthorized" });
     }
 
-    const existingProduct = await Product.findOne({ name, id });
+    const existingProduct = await Product.findOne({ name, project : haveAccess._doc.project });
     if (existingProduct) {
       return res.status(400).json({ error: "Product name already exists!" });
     }
