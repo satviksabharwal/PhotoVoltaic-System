@@ -92,16 +92,19 @@ export default function Nav({ openNav, onCloseNav }) {
 
           <Box sx={{ textAlign: "center" }}>
             <Typography gutterBottom variant="h6">
-              Get more?
+              Have some question?
             </Typography>
 
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              From only $69
+              email us: satviksabharwal7@gmail.com
             </Typography>
           </Box>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            OR
+          </Typography>
 
-          <Button href="https://material-ui.com/store/items/minimal-dashboard/" target="_blank" variant="contained">
-            Upgrade to Pro
+          <Button href="https://satviksabharwal.com/" target="_blank" variant="contained">
+            Contact us on our website
           </Button>
         </Stack>
       </Box>
