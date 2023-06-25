@@ -10,7 +10,6 @@ import { useDispatch } from "react-redux";
 import { setCurrentUserAction } from "../../../store/user/user.action";
 // components
 import Iconify from "../../../components/iconify";
-import { signInAuthWithEmailAndPassword } from "../../../utils/firebase/firebase.utils";
 
 // ----------------------------------------------------------------------
 const defaultFormFields = { email: "", password: "" };
@@ -37,7 +36,6 @@ export default function LoginForm() {
       const url = "http://localhost:5500/api/user/login";
       await axios.post(url, { email, password }).then(
         (response) => {
-          // localStorage.setItem("token", response);
           toast.success("Login Successful!!");
           resetFormFields();
           const tokenId = response?.data?.token;
