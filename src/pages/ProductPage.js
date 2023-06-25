@@ -1,14 +1,14 @@
-import { Box, Container, Modal, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Container, Modal, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
-import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { LoadingButton } from "@mui/lab";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import axios from "axios";
 import { selectCurrentUser } from "../store/user/user.selector";
 import ProductTableContainer from "./ProductTableContainer";
@@ -20,7 +20,8 @@ const style = {
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "background.paper",
-  border: "2px solid #000",
+  border: "2px solid #48B2E3",
+  borderRadius: "2%",
   boxShadow: 24,
   p: 4,
 };
@@ -209,23 +210,30 @@ const ProductPage = () => {
       <Helmet>
         <title>{`Dashboard: ${projectName}`}</title>
       </Helmet>
-      <Container maxWidth="l">
-        <Container maxWidth="l" sx={{ display: "flex" }}>
-          <Typography variant="h4" sx={{ mb: 5 }}>
-            {projectName}
-          </Typography>
-          <Tooltip title="Click To Update Project name.">
-            <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={editHandle}>
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Click To delete the Project. Caution: Deleting project will delete all the products inside.">
-            <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={deletehandle}>
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Container>
-        <Container maxWidth="l" style={{ marginBottom: "50px", display: "flex" }}>
+      <Container maxWidth="l" sx={{ marginLeft: "auto", paddingLeft: "0px" }}>
+        <div style={{ display: "flex" }}>
+          <div style={{ display: "flex" }}>
+            <Typography variant="h4" sx={{ mb: 5 }}>
+              {projectName}
+            </Typography>
+            <Tooltip title="Click To Update Project name.">
+              <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={editHandle}>
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Click To delete the Project. Caution: Deleting project will delete all the products inside.">
+              <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={deletehandle}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </div>
+          <div style={{ marginLeft: "auto" }}>
+            <Button variant="contained" style={{ backgroundColor: "#48B2E3" }}>
+              Genrate Report
+            </Button>
+          </div>
+        </div>
+        <div style={{ marginBottom: "50px", display: "flex" }}>
           <MapContainer
             center={[50.8282, 12.9209]}
             zoom={7}
@@ -333,7 +341,7 @@ const ProductPage = () => {
               Submit
             </LoadingButton>
           </form>
-        </Container>
+        </div>
         {buttonType === "edit" ? (
           <Modal
             open={open}
