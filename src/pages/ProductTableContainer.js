@@ -276,12 +276,12 @@ const ProductTableContainer = (isProductUpdated) => {
           <TableHead>
             <TableRow>
               <StyledTableCell>Product Name</StyledTableCell>
+              <StyledTableCell align="right">Latitude</StyledTableCell>
+              <StyledTableCell align="right">Longitude</StyledTableCell>
               <StyledTableCell align="right">Power Peak</StyledTableCell>
               <StyledTableCell align="right">Orientation</StyledTableCell>
               <StyledTableCell align="right">Inclination</StyledTableCell>
               <StyledTableCell align="right">Area</StyledTableCell>
-              <StyledTableCell align="right">Longitude</StyledTableCell>
-              <StyledTableCell align="right">Latitude</StyledTableCell>
               <StyledTableCell align="right">PV Data</StyledTableCell>
               <StyledTableCell align="right">Edit</StyledTableCell>
               <StyledTableCell align="right">Delete</StyledTableCell>
@@ -294,12 +294,12 @@ const ProductTableContainer = (isProductUpdated) => {
                   <StyledTableCell component="th" scope="row">
                     {data.name}
                   </StyledTableCell>
+                  <StyledTableCell align="right">{data.latitude}</StyledTableCell>
+                  <StyledTableCell align="right">{data.longitude}</StyledTableCell>
                   <StyledTableCell align="right">{data.powerPeak}</StyledTableCell>
                   <StyledTableCell align="right">{data.orientation}</StyledTableCell>
                   <StyledTableCell align="right">{data.inclination}</StyledTableCell>
                   <StyledTableCell align="right">{data.area}</StyledTableCell>
-                  <StyledTableCell align="right">{data.longitude}</StyledTableCell>
-                  <StyledTableCell align="right">{data.latitude}</StyledTableCell>
                   <StyledTableCell align="right">Dummy Data</StyledTableCell>
                   <StyledTableCell align="right" sx={{ m: 0 }}>
                     <Tooltip title="Click to update Product details.">
@@ -307,6 +307,15 @@ const ProductTableContainer = (isProductUpdated) => {
                         sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
                         onClick={() => {
                           setEditData({
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            name: data.name,
+                            powerPeak: data.powerPeak,
+                            orientation: data.orientation,
+                            inclination: data.inclination,
+                            area: data.area,
+                          });
+                          setFormFields({
                             latitude: data.latitude,
                             longitude: data.longitude,
                             name: data.name,
