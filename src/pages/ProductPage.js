@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from "react-leaflet";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -45,7 +45,9 @@ const ProductPage = () => {
   const [formFields, setFormFields] = useState(defaultFormFields);
   const [formFieldModal, setFormFieldModal] = useState("");
   const [buttonType, setButtonType] = useState("");
+  const [onClickLatlang, setOnClickLatLang] = useState({ lat: "", lng: "" });
   const currentUser = useSelector(selectCurrentUser);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   const navigate = useNavigate();
 
   const handleOpen = () => {
@@ -169,7 +171,10 @@ const ProductPage = () => {
           (response) => {
             toast.success(response.data.message);
             resetFormFields();
+            setFormSubmitted(!formSubmitted);
+            setOnClickLatLang({ lat: "", lng: "" });
             setIsProductUpdated(true);
+            getAllProductLocation();
           },
           (error) => {
             toast.error(error.message);
@@ -205,6 +210,15 @@ const ProductPage = () => {
     fetchNewProjectName();
   }, []);
 
+  const handleMapDoubleClick = (event) => {
+    const { latlng } = event;
+    const { lat, lng } = latlng;
+
+    setOnClickLatLang(latlng);
+    setFormFields({ ...formFields, latitude: lat, longitude: lng });
+    setFormSubmitted(!formSubmitted);
+  };
+
   return (
     <>
       <Helmet>
@@ -228,6 +242,13 @@ const ProductPage = () => {
             </Tooltip>
           </div>
           <div style={{ marginLeft: "auto" }}>
+            <Button
+              variant="contained"
+              style={{ backgroundColor: "orange", color: "white", marginRight: "20px" }}
+              disabled
+            >
+              Inactive
+            </Button>
             <Button variant="contained" style={{ backgroundColor: "#48B2E3" }}>
               Genrate Report
             </Button>
@@ -251,6 +272,14 @@ const ProductPage = () => {
                 </Popup>
               </Marker>
             ))}
+            <Marker
+              position={[
+                onClickLatlang.lat === "" ? "" : onClickLatlang.lat,
+                onClickLatlang.lng === "" ? "" : onClickLatlang.lng,
+              ]}
+              key={"On Double Click Marker"}
+            />
+            <MapEvents handleMapDoubleClick={handleMapDoubleClick} />
           </MapContainer>
           <form
             onSubmit={handleCreateProduct}
@@ -258,6 +287,7 @@ const ProductPage = () => {
           >
             <Stack spacing={2}>
               <TextField
+                key={formSubmitted ? "latitude-reset" : "latitude"}
                 name="latitude"
                 label="Latitude"
                 type={"float"}
@@ -265,10 +295,12 @@ const ProductPage = () => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={onClickLatlang.lat === "" ? "" : onClickLatlang.lat}
                 onChange={handleChange}
               />
 
               <TextField
+                key={formSubmitted ? "longitude-reset" : "longitude"}
                 name="longitude"
                 label="Longitude"
                 type={"float"}
@@ -276,10 +308,12 @@ const ProductPage = () => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={onClickLatlang.lng === "" ? "" : onClickLatlang.lng}
                 onChange={handleChange}
               />
 
               <TextField
+                key={formSubmitted ? "productName-reset" : "productName"}
                 name="productName"
                 label="Product Name"
                 type={"text"}
@@ -291,6 +325,7 @@ const ProductPage = () => {
               />
 
               <TextField
+                key={formSubmitted ? "powerPeak-reset" : "powerPeak"}
                 name="powerPeak"
                 label="Power Peak"
                 type={"number"}
@@ -301,6 +336,7 @@ const ProductPage = () => {
                 onChange={handleChange}
               />
               <TextField
+                key={formSubmitted ? "orientation-reset" : "orientation"}
                 name="orientation"
                 label="Orientation(N/E/S/W)"
                 type={"text"}
@@ -311,6 +347,7 @@ const ProductPage = () => {
                 onChange={handleChange}
               />
               <TextField
+                key={formSubmitted ? "inclination-reset" : "inclination"}
                 name="inclination"
                 label="Inclination"
                 type={"number"}
@@ -321,6 +358,7 @@ const ProductPage = () => {
                 onChange={handleChange}
               />
               <TextField
+                key={formSubmitted ? "area-reset" : "area"}
                 name="area"
                 label="Area(m²)"
                 type={"number"}
@@ -424,3 +462,11 @@ const ProductPage = () => {
 };
 
 export default ProductPage;
+
+const MapEvents = ({ handleMapDoubleClick }) => {
+  useMapEvents({
+    dblclick: handleMapDoubleClick,
+  });
+
+  return null;
+};
