@@ -1,7 +1,9 @@
 import express from "express";
 import {verifyToken, getUserIdFromtoken} from "../commonFunctions.js"
-import { Product, Project } from "../db/index.js";
+import { Product, Project, PvDetails } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
+
+import axios from "axios";
 
 const router = express.Router();
 
@@ -118,6 +120,26 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     console.error("Error in delete project API:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+});
+
+// Get PV data API
+router.get("/getPVData", verifyToken, async(req, res) => {
+  try {
+    // Retrieve all pvDetails from the database
+    const user = getUserIdFromtoken(req);
+    const project = req.query.projectId;
+    let pvDetails;
+    if(project){
+      // await PvDetails.deleteMany();
+      pvDetails = await PvDetails.find({project});
+    } 
+    
+    res.json(pvDetails);
+  } catch (error) {
+    console.error("Error in get pv details API:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+  
 });
 
 export default router;
