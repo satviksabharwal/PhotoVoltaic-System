@@ -11,7 +11,8 @@ export const productSchema = new mongoose.Schema(
     longitude: { type: Number, required: true },
     latitude: { type: Number, required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    project: { type: String, ref: "Project", required: true }
+    project: { type: String, ref: "Project", required: true },
+    pvValue: {type: Number}
   },
   {
     versionKey: false,

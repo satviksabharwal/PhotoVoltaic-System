@@ -38,3 +38,14 @@ export function getUserIdFromtoken(req){
     return undefined;
   }
 }
+
+export async function calculateElectricityProduced(product, weatherData) {
+  // Extract relevant information from the product and weather data
+  const { powerPeak, area,inclination  } = product;
+  const data  = weatherData;
+
+  // Calculate the total electricity produced for the given product
+    const solarRadiation = data?.solar_rad;
+    const electricityProduced = (inclination * powerPeak * area) * (solarRadiation ?? 4);
+    return electricityProduced
+  }
