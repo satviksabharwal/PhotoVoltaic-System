@@ -30,7 +30,8 @@ const style = {
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "background.paper",
-  border: "2px solid #000",
+  border: "2px solid #48B2E3",
+  borderRadius: "2%",
   boxShadow: 24,
   p: 4,
 };
@@ -53,6 +54,7 @@ const ProductTableContainer = (isProductUpdated) => {
   const [formFields, setFormFields] = useState(defaultFormFields);
   const [productUpdateId, setProductUpdateId] = useState("");
   const [newCreatedProduct, setNewCreatedProduct] = useState(true);
+  const [editData, setEditData] = useState({});
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -98,6 +100,7 @@ const ProductTableContainer = (isProductUpdated) => {
             resetFormFieldsModal();
             setOpen(false);
             setProductUpdateId("");
+            setEditData({});
             getAllProductData();
           },
           (error) => {
@@ -183,6 +186,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.latitude}
                 onChange={handleChange}
               />
 
@@ -194,6 +198,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.longitude}
                 onChange={handleChange}
               />
 
@@ -205,6 +210,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.name}
                 onChange={handleChange}
               />
 
@@ -216,6 +222,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.powerPeak}
                 onChange={handleChange}
               />
               <TextField
@@ -226,6 +233,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.orientation}
                 onChange={handleChange}
               />
               <TextField
@@ -236,6 +244,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.inclination}
                 onChange={handleChange}
               />
               <TextField
@@ -246,6 +255,7 @@ const ProductTableContainer = (isProductUpdated) => {
                 id="outlined-basic"
                 variant="outlined"
                 fullWidth
+                defaultValue={editData.area}
                 onChange={handleChange}
               />
             </Stack>
@@ -266,12 +276,12 @@ const ProductTableContainer = (isProductUpdated) => {
           <TableHead>
             <TableRow>
               <StyledTableCell>Product Name</StyledTableCell>
+              <StyledTableCell align="right">Latitude</StyledTableCell>
+              <StyledTableCell align="right">Longitude</StyledTableCell>
               <StyledTableCell align="right">Power Peak</StyledTableCell>
               <StyledTableCell align="right">Orientation</StyledTableCell>
               <StyledTableCell align="right">Inclination</StyledTableCell>
               <StyledTableCell align="right">Area</StyledTableCell>
-              <StyledTableCell align="right">Longitude</StyledTableCell>
-              <StyledTableCell align="right">Latitude</StyledTableCell>
               <StyledTableCell align="right">PV Data</StyledTableCell>
               <StyledTableCell align="right">Edit</StyledTableCell>
               <StyledTableCell align="right">Delete</StyledTableCell>
@@ -284,18 +294,36 @@ const ProductTableContainer = (isProductUpdated) => {
                   <StyledTableCell component="th" scope="row">
                     {data.name}
                   </StyledTableCell>
+                  <StyledTableCell align="right">{data.latitude}</StyledTableCell>
+                  <StyledTableCell align="right">{data.longitude}</StyledTableCell>
                   <StyledTableCell align="right">{data.powerPeak}</StyledTableCell>
                   <StyledTableCell align="right">{data.orientation}</StyledTableCell>
                   <StyledTableCell align="right">{data.inclination}</StyledTableCell>
                   <StyledTableCell align="right">{data.area}</StyledTableCell>
-                  <StyledTableCell align="right">{data.longitude}</StyledTableCell>
-                  <StyledTableCell align="right">{data.latitude}</StyledTableCell>
                   <StyledTableCell align="right">Dummy Data</StyledTableCell>
                   <StyledTableCell align="right" sx={{ m: 0 }}>
                     <Tooltip title="Click to update Product details.">
                       <EditIcon
                         sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
                         onClick={() => {
+                          setEditData({
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            name: data.name,
+                            powerPeak: data.powerPeak,
+                            orientation: data.orientation,
+                            inclination: data.inclination,
+                            area: data.area,
+                          });
+                          setFormFields({
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            name: data.name,
+                            powerPeak: data.powerPeak,
+                            orientation: data.orientation,
+                            inclination: data.inclination,
+                            area: data.area,
+                          });
                           setProductUpdateId(data?.id);
                           handleOpen();
                         }}
