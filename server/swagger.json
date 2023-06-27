@@ -3,7 +3,7 @@
   "info": {
     "title": "PS API",
     "version": "1.0.0",
-    "description": "API endpoints for user authentication"
+    "description": "All API endpoints used in this project."
   },
   "securityDefinitions": {
     "BearerAuth": {
@@ -13,7 +13,7 @@
       "in": "header"
     }
   },
-  "basePath": "/",
+  "basePath": "/api-docs/",
   "paths": {
     "/api/user": {
       "post": {
