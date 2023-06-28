@@ -35,6 +35,7 @@ const defaultFormFields = {
   inclination: "",
   area: "",
 };
+const GENERATEREPORT = false;
 
 const ProductPage = () => {
   const params = useParams();
@@ -230,27 +231,41 @@ const ProductPage = () => {
             <Typography variant="h4" sx={{ mb: 5 }}>
               {projectName}
             </Typography>
-            <Tooltip title="Click To Update Project name.">
-              <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={editHandle}>
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Click To delete the Project. Caution: Deleting project will delete all the products inside.">
-              <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={deletehandle}>
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
+            {GENERATEREPORT ? (
+              <></>
+            ) : (
+              <>
+                <Tooltip title="Click To Update Project name.">
+                  <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={editHandle}>
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Click To delete the Project. Caution: Deleting project will delete all the products inside.">
+                  <IconButton sx={{ mt: 0, mb: 5, ml: 1 }} onClick={deletehandle}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
           </div>
           <div style={{ marginLeft: "auto" }}>
             <Button
               variant="contained"
-              style={{ backgroundColor: "orange", color: "white", marginRight: "20px" }}
+              style={{
+                backgroundColor: `${GENERATEREPORT ? "orange" : "#5ac85a"} `,
+                color: "white",
+                marginRight: "20px",
+              }}
               disabled
             >
-              Inactive
+              {GENERATEREPORT ? "Inactive" : "Active"}
             </Button>
-            <Button variant="contained" style={{ backgroundColor: "#48B2E3" }}>
-              Genrate Report
+            <Button
+              variant="contained"
+              style={{ backgroundColor: `${GENERATEREPORT ? "grey" : "#48B2E3"}`, color: "white" }}
+              disabled={GENERATEREPORT}
+            >
+              {GENERATEREPORT ? "Report Generated" : "Generate Report"}
             </Button>
           </div>
         </div>
@@ -259,7 +274,12 @@ const ProductPage = () => {
             center={[50.8282, 12.9209]}
             zoom={7}
             scrollWheelZoom={false}
-            style={{ maxHeight: "560px", marginLeft: "0px", marginRight: "30px", flex: "0.7" }}
+            style={{
+              maxHeight: "560px",
+              marginLeft: "0px",
+              marginRight: `${GENERATEREPORT ? "0px" : "30px"}`,
+              flex: `${GENERATEREPORT ? "1" : "0.7"}`,
+            }}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -272,113 +292,124 @@ const ProductPage = () => {
                 </Popup>
               </Marker>
             ))}
-            <Marker
-              position={[
-                onClickLatlang.lat === "" ? "" : onClickLatlang.lat,
-                onClickLatlang.lng === "" ? "" : onClickLatlang.lng,
-              ]}
-              key={"On Double Click Marker"}
-            />
-            <MapEvents handleMapDoubleClick={handleMapDoubleClick} />
+            {GENERATEREPORT ? (
+              <></>
+            ) : (
+              <>
+                <Marker
+                  position={[
+                    onClickLatlang.lat === "" ? "" : onClickLatlang.lat,
+                    onClickLatlang.lng === "" ? "" : onClickLatlang.lng,
+                  ]}
+                  key={"On Double Click Marker"}
+                />
+                <MapEvents handleMapDoubleClick={handleMapDoubleClick} />
+              </>
+            )}
           </MapContainer>
-          <form
-            onSubmit={handleCreateProduct}
-            style={{ marginRight: "0px", marginLeft: "auto", width: "100%", flex: "0.3" }}
-          >
-            <Stack spacing={2}>
-              <TextField
-                key={formSubmitted ? "latitude-reset" : "latitude"}
-                name="latitude"
-                label="Latitude"
-                type={"float"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                defaultValue={onClickLatlang.lat === "" ? "" : onClickLatlang.lat}
-                onChange={handleChange}
-              />
 
-              <TextField
-                key={formSubmitted ? "longitude-reset" : "longitude"}
-                name="longitude"
-                label="Longitude"
-                type={"float"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                defaultValue={onClickLatlang.lng === "" ? "" : onClickLatlang.lng}
-                onChange={handleChange}
-              />
-
-              <TextField
-                key={formSubmitted ? "productName-reset" : "productName"}
-                name="productName"
-                label="Product Name"
-                type={"text"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                onChange={handleChange}
-              />
-
-              <TextField
-                key={formSubmitted ? "powerPeak-reset" : "powerPeak"}
-                name="powerPeak"
-                label="Power Peak"
-                type={"number"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                onChange={handleChange}
-              />
-              <TextField
-                key={formSubmitted ? "orientation-reset" : "orientation"}
-                name="orientation"
-                label="Orientation(N/E/S/W)"
-                type={"text"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                onChange={handleChange}
-              />
-              <TextField
-                key={formSubmitted ? "inclination-reset" : "inclination"}
-                name="inclination"
-                label="Inclination"
-                type={"number"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                onChange={handleChange}
-              />
-              <TextField
-                key={formSubmitted ? "area-reset" : "area"}
-                name="area"
-                label="Area(m²)"
-                type={"number"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                onChange={handleChange}
-              />
-            </Stack>
-            <LoadingButton
-              fullWidth
-              size="large"
-              type="submit"
-              variant="contained"
-              style={{ backgroundColor: "#48B2E3", marginTop: "20px" }}
+          {GENERATEREPORT ? (
+            <></>
+          ) : (
+            <form
+              onSubmit={handleCreateProduct}
+              style={{ marginRight: "0px", marginLeft: "auto", width: "100%", flex: "0.3" }}
             >
-              Submit
-            </LoadingButton>
-          </form>
+              <Stack spacing={2}>
+                <TextField
+                  key={formSubmitted ? "latitude-reset" : "latitude"}
+                  name="latitude"
+                  label="Latitude"
+                  type={"float"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  defaultValue={onClickLatlang.lat === "" ? "" : onClickLatlang.lat}
+                  onChange={handleChange}
+                />
+
+                <TextField
+                  key={formSubmitted ? "longitude-reset" : "longitude"}
+                  name="longitude"
+                  label="Longitude"
+                  type={"float"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  defaultValue={onClickLatlang.lng === "" ? "" : onClickLatlang.lng}
+                  onChange={handleChange}
+                />
+
+                <TextField
+                  key={formSubmitted ? "productName-reset" : "productName"}
+                  name="productName"
+                  label="Product Name"
+                  type={"text"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  onChange={handleChange}
+                />
+
+                <TextField
+                  key={formSubmitted ? "powerPeak-reset" : "powerPeak"}
+                  name="powerPeak"
+                  label="Power Peak"
+                  type={"number"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  onChange={handleChange}
+                />
+                <TextField
+                  key={formSubmitted ? "orientation-reset" : "orientation"}
+                  name="orientation"
+                  label="Orientation(N/E/S/W)"
+                  type={"text"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  onChange={handleChange}
+                />
+                <TextField
+                  key={formSubmitted ? "inclination-reset" : "inclination"}
+                  name="inclination"
+                  label="Inclination"
+                  type={"number"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  onChange={handleChange}
+                />
+                <TextField
+                  key={formSubmitted ? "area-reset" : "area"}
+                  name="area"
+                  label="Area(m²)"
+                  type={"number"}
+                  required
+                  id="outlined-basic"
+                  variant="outlined"
+                  fullWidth
+                  onChange={handleChange}
+                />
+              </Stack>
+              <LoadingButton
+                fullWidth
+                size="large"
+                type="submit"
+                variant="contained"
+                style={{ backgroundColor: "#48B2E3", marginTop: "20px" }}
+              >
+                Submit
+              </LoadingButton>
+            </form>
+          )}
         </div>
         {buttonType === "edit" ? (
           <Modal
@@ -455,7 +486,7 @@ const ProductPage = () => {
         ) : (
           <></>
         )}
-        <ProductTableContainer isProductUpdated={isProductUpdated} />
+        <ProductTableContainer isProductUpdated={isProductUpdated} reportGenerated={GENERATEREPORT} />
       </Container>
     </>
   );

@@ -46,7 +46,8 @@ const defaultFormFields = {
   area: "",
 };
 
-const ProductTableContainer = (isProductUpdated) => {
+const ProductTableContainer = (props) => {
+  const { isProductUpdated, reportGenerated } = props;
   const params = useParams();
   const currentUser = useSelector(selectCurrentUser);
   const [productData, setProductData] = useState();
@@ -55,7 +56,6 @@ const ProductTableContainer = (isProductUpdated) => {
   const [productUpdateId, setProductUpdateId] = useState("");
   const [newCreatedProduct, setNewCreatedProduct] = useState(true);
   const [editData, setEditData] = useState({});
-
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormFields({ ...formFields, [name]: value });
@@ -156,7 +156,7 @@ const ProductTableContainer = (isProductUpdated) => {
     getAllProductData();
   }, []);
 
-  if (isProductUpdated?.isProductUpdated && newCreatedProduct) {
+  if (isProductUpdated && newCreatedProduct) {
     getAllProductData();
     setNewCreatedProduct(false);
   }
@@ -283,8 +283,14 @@ const ProductTableContainer = (isProductUpdated) => {
               <StyledTableCell align="right">Inclination</StyledTableCell>
               <StyledTableCell align="right">Area</StyledTableCell>
               <StyledTableCell align="right">PV Data</StyledTableCell>
-              <StyledTableCell align="right">Edit</StyledTableCell>
-              <StyledTableCell align="right">Delete</StyledTableCell>
+              {reportGenerated ? (
+                <></>
+              ) : (
+                <>
+                  <StyledTableCell align="right">Edit</StyledTableCell>
+                  <StyledTableCell align="right">Delete</StyledTableCell>
+                </>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -294,50 +300,56 @@ const ProductTableContainer = (isProductUpdated) => {
                   <StyledTableCell component="th" scope="row">
                     {data.name}
                   </StyledTableCell>
-                  <StyledTableCell align="right">{data.latitude}</StyledTableCell>
-                  <StyledTableCell align="right">{data.longitude}</StyledTableCell>
+                  <StyledTableCell align="right">{data.latitude.toFixed(4)}</StyledTableCell>
+                  <StyledTableCell align="right">{data.longitude.toFixed(4)}</StyledTableCell>
                   <StyledTableCell align="right">{data.powerPeak}</StyledTableCell>
                   <StyledTableCell align="right">{data.orientation}</StyledTableCell>
                   <StyledTableCell align="right">{data.inclination}</StyledTableCell>
                   <StyledTableCell align="right">{data.area}</StyledTableCell>
                   <StyledTableCell align="right">Dummy Data</StyledTableCell>
-                  <StyledTableCell align="right" sx={{ m: 0 }}>
-                    <Tooltip title="Click to update Product details.">
-                      <EditIcon
-                        sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
-                        onClick={() => {
-                          setEditData({
-                            latitude: data.latitude,
-                            longitude: data.longitude,
-                            name: data.name,
-                            powerPeak: data.powerPeak,
-                            orientation: data.orientation,
-                            inclination: data.inclination,
-                            area: data.area,
-                          });
-                          setFormFields({
-                            latitude: data.latitude,
-                            longitude: data.longitude,
-                            name: data.name,
-                            powerPeak: data.powerPeak,
-                            orientation: data.orientation,
-                            inclination: data.inclination,
-                            area: data.area,
-                          });
-                          setProductUpdateId(data?.id);
-                          handleOpen();
-                        }}
-                      />
-                    </Tooltip>
-                  </StyledTableCell>
-                  <StyledTableCell align="right" sx={{ m: 0 }}>
-                    <Tooltip title="Click to delete the Product.">
-                      <DeleteIcon
-                        onClick={() => deletehandle(data.id)}
-                        sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
-                      />
-                    </Tooltip>
-                  </StyledTableCell>
+                  {reportGenerated ? (
+                    <></>
+                  ) : (
+                    <>
+                      <StyledTableCell align="right" sx={{ m: 0 }}>
+                        <Tooltip title="Click to update Product details.">
+                          <EditIcon
+                            sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
+                            onClick={() => {
+                              setEditData({
+                                latitude: data.latitude,
+                                longitude: data.longitude,
+                                name: data.name,
+                                powerPeak: data.powerPeak,
+                                orientation: data.orientation,
+                                inclination: data.inclination,
+                                area: data.area,
+                              });
+                              setFormFields({
+                                latitude: data.latitude,
+                                longitude: data.longitude,
+                                name: data.name,
+                                powerPeak: data.powerPeak,
+                                orientation: data.orientation,
+                                inclination: data.inclination,
+                                area: data.area,
+                              });
+                              setProductUpdateId(data?.id);
+                              handleOpen();
+                            }}
+                          />
+                        </Tooltip>
+                      </StyledTableCell>
+                      <StyledTableCell align="right" sx={{ m: 0 }}>
+                        <Tooltip title="Click to delete the Product.">
+                          <DeleteIcon
+                            onClick={() => deletehandle(data.id)}
+                            sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
+                          />
+                        </Tooltip>
+                      </StyledTableCell>
+                    </>
+                  )}
                 </StyledTableRow>
               ))
             ) : (
