@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import axios from "axios";
-import {calculateElectricityProduced} from "./commonFunctions.js";
+import {calculateElectricityProduced, getRandomNumber, weathertoken} from "./commonFunctions.js";
 import { Product, PvDetails } from "./db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -8,13 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 export const executeCorn = () => {
   cron.schedule('5 6-20 * * *', async () => {
     try {
-      function convertToDoubleDigit(number) {
-        if (number < 10) {
-          return "0" + number;
-        } else {
-          return number.toString();
-        }
-      }
+      
       const currentdate = new Date();
       const fromDate = `${currentdate.getFullYear()}-${convertToDoubleDigit(currentdate.getMonth()+1)}-${convertToDoubleDigit(currentdate.getDate())}`;
       const endDate = `${currentdate.getFullYear()}-${convertToDoubleDigit(currentdate.getMonth()+1)}-${convertToDoubleDigit(currentdate.getDate()+1)}`;
@@ -29,7 +23,7 @@ export const executeCorn = () => {
               lon: productData.longitude,
               start_date: fromDate,
               end_date: endDate,
-              key: '2a70c306e8814c639c7a7f34521670aa'
+              key: weathertoken
             }
           });
           const pvData = await PvDetails.findOne({product: productData.id}).lean();
@@ -46,17 +40,19 @@ export const executeCorn = () => {
             console.error("Issue with weather API", weatherResponse?.data?.data);
             return 'Issue with weather API';
           }
+          
           const filteredData = await weatherResponse?.data?.data?.filter(weather => weather?.datetime === dateWithHours)
           if(filteredData?.length){
             const { powerPeak, area,inclination  } = productData
-            const pvValue = await calculateElectricityProduced(productData, filteredData[0]);
+            const opitionalSolarVal = getRandomNumber()
+            const pvValue = await calculateElectricityProduced(productData, filteredData[0], opitionalSolarVal);
             const finalObj = {
               dateAndTime: dateWithHours,
               pvValue: pvValue, 
               powerPeak: powerPeak, 
               area: area,
               inclination: inclination, 
-              solarRad: filteredData[0]?.solar_rad ?? 4 
+              solarRad: filteredData[0]?.solar_rad ?? opitionalSolarVal 
             }
             if(pvData) {
               //Update

@@ -7,7 +7,7 @@ import userRoutes from "./routes/user.js";
 import projectRoutes from "./routes/project.js";
 import productRoutes from "./routes/product.js";
 import {executeCorn} from "./cornCalculatePS.js";
-
+import {generateAndSendPDF} from "./genrateDocument.js"
 const rawData = fs.readFileSync("./swagger.json");
 
 const swaggerDocument = JSON.parse(rawData);

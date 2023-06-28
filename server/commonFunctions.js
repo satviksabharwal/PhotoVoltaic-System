@@ -39,13 +39,33 @@ export function getUserIdFromtoken(req){
   }
 }
 
-export async function calculateElectricityProduced(product, weatherData) {
+export async function calculateElectricityProduced(product, weatherData, opitionalSolarVal) {
   // Extract relevant information from the product and weather data
   const { powerPeak, area,inclination  } = product;
   const data  = weatherData;
 
   // Calculate the total electricity produced for the given product
     const solarRadiation = data?.solar_rad;
-    const electricityProduced = (inclination * powerPeak * area) * (solarRadiation ?? 4);
+    const electricityProduced = (inclination * powerPeak * area) * (solarRadiation ?? opitionalSolarVal);
     return electricityProduced
   }
+
+export function getRandomNumber() {
+    // Generate a random decimal between 0 and 1
+    var randomDecimal = Math.random();
+  
+    // Scale the random decimal to the range 1-10 (inclusive)
+    var randomNumber = Math.floor(randomDecimal * 10) + 1;
+  
+    return randomNumber;
+  }
+
+export const weathertoken = '2a70c306e8814c639c7a7f34521670aa'
+
+export function convertToDoubleDigit(number) {
+  if (number < 10) {
+    return "0" + number;
+  } else {
+    return number.toString();
+  }
+}
