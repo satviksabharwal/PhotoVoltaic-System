@@ -22,6 +22,7 @@ import { toast } from "react-toastify";
 import { LoadingButton } from "@mui/lab";
 import { selectCurrentUser } from "../store/user/user.selector";
 import { StyledTableCell, StyledTableRow } from "./TableContainer.styled";
+import NoData from "./nodata.jpg";
 
 const style = {
   position: "absolute",
@@ -282,7 +283,7 @@ const ProductTableContainer = (props) => {
               <StyledTableCell align="right">Orientation</StyledTableCell>
               <StyledTableCell align="right">Inclination</StyledTableCell>
               <StyledTableCell align="right">Area</StyledTableCell>
-              <StyledTableCell align="right">PV Data</StyledTableCell>
+              <StyledTableCell align="right">PV Value</StyledTableCell>
               {reportGenerated ? (
                 <></>
               ) : (
@@ -306,7 +307,7 @@ const ProductTableContainer = (props) => {
                   <StyledTableCell align="right">{data.orientation}</StyledTableCell>
                   <StyledTableCell align="right">{data.inclination}</StyledTableCell>
                   <StyledTableCell align="right">{data.area}</StyledTableCell>
-                  <StyledTableCell align="right">Dummy Data</StyledTableCell>
+                  <StyledTableCell align="right">{data.pvValue}</StyledTableCell>
                   {reportGenerated ? (
                     <></>
                   ) : (
@@ -353,7 +354,16 @@ const ProductTableContainer = (props) => {
                 </StyledTableRow>
               ))
             ) : (
-              <>No Data</>
+              <StyledTableCell colSpan={10} align="center" style={{ border: "1px solid #48B2E3" }}>
+                <img
+                  id="nodata"
+                  src={NoData}
+                  height="400px"
+                  width="400px"
+                  style={{ margin: "10px auto" }}
+                  alt="No Data in Table"
+                />
+              </StyledTableCell>
             )}
           </TableBody>
         </Table>
