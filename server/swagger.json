@@ -13,7 +13,7 @@
       "in": "header"
     }
   },
-  "basePath": "/api-docs/",
+  "basePath": "",
   "paths": {
     "/api/user": {
       "post": {
@@ -503,6 +503,36 @@
           {
             "name": "projectId",
             "in": "query",
+            "description": "ProjectId to get projects",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/project/generateApi/{projectId}": {
+      "get": {
+        "summary": "Get generate",
+        "tags": [
+          "Project"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
             "description": "ProjectId to get projects",
             "required": true,
             "type": "string"

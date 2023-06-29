@@ -1,9 +1,8 @@
 import express from "express";
 import {verifyToken, getUserIdFromtoken} from "../commonFunctions.js"
-import { Product, Project, PvDetails } from "../db/index.js";
+import { Product, Project, PvDetails, User } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
-
-import axios from "axios";
+import {generateAndSendPDF} from "../genrateDocument.js"
 
 const router = express.Router();
 
@@ -135,6 +134,45 @@ router.get("/getPVData", verifyToken, async(req, res) => {
     } 
     
     res.json(pvDetails);
+  } catch (error) {
+    console.error("Error in get pv details API:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+  
+});
+
+// Get Generate data API
+router.get("/generateApi/:id", verifyToken, async(req, res) => {
+  try {
+    // Retrieve all pvDetails from the database
+    const user = getUserIdFromtoken(req);
+    const project = req.params.id;
+    let pvDetails;
+    if(project){
+      // await PvDetails.deleteMany();
+      pvDetails = await PvDetails.find({project, user}).lean();
+    } 
+  const projectDetails = await Project.findOne({id: project}).lean();
+  if(projectDetails?.isReportGeneratd){
+    // return res.status(400).json({ message: "Report already generated" });
+  }
+  const userDetails = await User.findOne({_id: user}).lean();
+  if( pvDetails && userDetails) {
+    generateAndSendPDF(pvDetails, userDetails.email,projectDetails)
+    .then(async () => {
+      console.log('PDF sent successfully!');
+      const result = await Project.updateOne({ id: project }, { $set: { isReportGeneratd: true } });
+
+    
+      res.json({ message: `Report sent to email` });
+    })
+    .catch((error) => {
+      console.error('Error sending PDF:', error);
+    });
+  }
+  
+  
+    // res.json(pvDetails);
   } catch (error) {
     console.error("Error in get pv details API:", error);
     res.status(500).json({ message: "Internal server error" });
