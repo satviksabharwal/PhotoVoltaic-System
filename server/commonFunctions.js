@@ -60,12 +60,13 @@ export function getRandomNumber() {
     return randomNumber;
   }
 
-export const weathertoken = '2a70c306e8814c639c7a7f34521670aa'
-
-export function convertToDoubleDigit(number) {
-  if (number < 10) {
-    return "0" + number;
-  } else {
-    return number.toString();
+  
+  export function convertToDoubleDigit(number) {
+    if (number < 10) {
+      return "0" + number;
+    } else {
+      return number.toString();
+    }
   }
-}
+  export const weathertoken = '2a70c306e8814c639c7a7f34521670aa'
+  export const fromEmail = 'satviksabharwal7@gmail.com'

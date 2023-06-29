@@ -1,28 +1,37 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import nodemailer from 'nodemailer';
-import request from 'request-promise-native';
+import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import { Product } from './db/index.js';
+import {fromEmail} from './commonFunctions.js'
 
-export async function generateAndSendPDF(data, email) {
+export async function generateAndSendPDF(data, email, projectDetails) {
   const doc = new PDFDocument();
 
-  // Prepare chart data
-  const chartData = data.hourWiseData.map((entry) => {
-    return {
-      t: new Date(entry.dateAndTime),
-      y: entry.pvValue,
-    };
-  });
-
   // Set up the PDF document
-  doc.fontSize(16).text('PV Value Chart', { align: 'center' });
+  doc.fontSize(16).text('PV Value Report', { align: 'center' });
+  
+  // Generate the product details table
+  generateProductDetailsTable(doc, data, projectDetails);
 
-  // Generate and embed the chart image
-  const chartImage = await getChartImage(chartData);
-  doc.image(chartImage, { width: 500, height: 300, align: 'center' });
+  // Generate the total PV value
+  const totalPVValue = calculateTotalPVValue(data);
+  doc.moveDown().fontSize(14).text(`Total PV Value: ${totalPVValue}`);
+
+  // Generate some general text about report generation
+  doc.moveDown().fontSize(12).text('This report provides an overview of the PV value for the given products.');
+
+  // Generate and embed the chart image for each product
+  for (const productData of data) {
+    const productdetails = await Product.findOne({id: productData.product}).lean();
+    const chartImage = await generateChartImage(productData.hourWiseData);
+    const page = doc.addPage()
+    page.fontSize(12).text("Product name", productdetails?.name);
+    page.image(chartImage, { width: 500, height: 300, align: 'center' });
+  }
 
   // Save the PDF to a file
-  const pdfPath = 'pv_chart.pdf';
+  const pdfPath = 'pv_report.pdf';
   doc.pipe(fs.createWriteStream(pdfPath));
   doc.end();
 
@@ -34,10 +43,24 @@ export async function generateAndSendPDF(data, email) {
   });
 
   const mailOptions = {
-    from: 'nagu@yopmail.com',
-    to: 'pvvaluetestmail@yopmail.com',
-    subject: 'PV Value Chart',
-    text: 'Please find the attached PDF with the PV Value chart.',
+    from: fromEmail,
+    to: email,
+    subject: 'PV Value Report',
+    text: `
+    Dear recipient,
+
+    We are pleased to provide you with the PV Value Report. This report contains detailed information 
+    about the PV value of the products in your project.
+
+    Please find the attached PDF file named "pv_report.pdf" that contains the report.
+
+    If you have any questions or require further assistance, please don't hesitate to reach out to us. 
+    We are always here to help.
+
+    Thank you for your attention, and we hope this report assists you in your project.
+
+    Best regards,
+    PV Calculation Team`,
     attachments: [{ filename: pdfPath, path: pdfPath }],
   };
 
@@ -52,69 +75,101 @@ export async function generateAndSendPDF(data, email) {
   });
 }
 
-async function getChartImage(chartData) {
-  // Implement your chart generation logic here
-  // This could involve using charting libraries like Chart.js or D3.js
-  // Return the chart image in a format that can be embedded in the PDF
+async function generateProductDetailsTable(doc, data, projectDetails) {
+  doc.moveDown().fontSize(14).text('Product Details');
 
-  // Dummy implementation generating a placeholder image using dummyimage.com
-  const placeholderImageUrl = `https://dummyimage.com/500x300.png/000/ffffff&text=Chart+Placeholder`;
+  // Table headers
+  await doc.moveDown();
+  await doc.fontSize(12).text('Project name', { width: 100, align: 'left' });
+  await doc.text('Product name', { width: 100, align: 'left' });
+  await doc.text('PV Value', { width: 100, align: 'left' });
 
-  // Download the image file from the URL
-  const imagePath = 'chart_placeholder.png';
-  await request.get(placeholderImageUrl).pipe(fs.createWriteStream(imagePath));
+  // Table rows
+  for (const productData of data) {
+    const productdetails = await Product.findOne({id: productData.product}).lean();
+    await doc.moveDown();
+    await doc.fontSize(12).text(projectDetails?.name, { width: 100, align: 'left' });
+    await doc.text(productdetails?.name, { width: 100, align: 'left' });
+    // Calculate and display the PV value for the product
 
-  return imagePath;
+    const pvValue = await calculateTotalPVValue([productData]);
+    await doc.text(pvValue.toString(), { width: 100, align: 'left' });
+  }
 }
 
-// Example usage
-const data = [
-  {
-    id: '0470b219-1e66-4dc8-9a28-944112f314bd',
-    product: '3cd3ed19-b58b-453b-8ef5-7c17b3b4f263',
-    project: '540e7e58-33b2-4224-99ce-2b294a1d45fc',
-    user: '6491bc004ea451fa4aa348a2',
-    hourWiseData: [
-      {
-        dateAndTime: '2023-06-27:10',
-        pvValue: 8000,
-        powerPeak: 10,
-        area: 20,
-        inclination: 10,
-        solarRad: 4,
-      },
-      {
-        dateAndTime: '2023-06-27:07',
-        pvValue: 8000,
-        powerPeak: 10,
-        area: 20,
-        inclination: 10,
-        solarRad: 4,
-      },
-      {
-        dateAndTime: '2023-06-27:08',
-        pvValue: 8000,
-        powerPeak: 10,
-        area: 20,
-        inclination: 10,
-        solarRad: 4,
-      },
-      {
-        dateAndTime: '2023-06-27:09',
-        pvValue: 8000,
-        powerPeak: 10,
-        area: 20,
-        inclination: 10,
-        solarRad: 4,
-      },
-    ],
-  },
-];
+  
+function calculateTotalPVValue(data) {
+  let totalPVValue = 0;
+  for (const productData of data) {
+    for (const entry of productData.hourWiseData) {
+      totalPVValue += entry.pvValue;
+    }
+  }
+  return totalPVValue;
+}
 
-generateAndSendPDF(data[0], 'nagu@yopmail.com')
-  .then(() => {
-    console.log('PDF sent successfully!');
-  })
-  .catch((error) => {
-    console.error('Error sending PDF:', error);
-  });
+async function generateChartImage(hourWiseData) {
+  const width = 800;
+  const height = 400;
+
+  // Prepare chart data
+  const labels = hourWiseData.map((entry) => entry.dateAndTime);
+  const values = hourWiseData.map((entry) => entry.pvValue);
+
+  // Set up Chart.js configuration
+  const configuration = {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'PV Value',
+          data: values,
+          backgroundColor: 'rgba(75, 192, 192, 0.8)',
+        },
+      ],
+    },
+    options: {
+      scales: {
+        x: {
+          display: true,
+          title: {
+            display: true,
+            text: `Date/Time`,
+          },
+        },
+        y: {
+          display: true,
+          title: {
+            display: true,
+            text: 'PV Value',
+          },
+        },
+      },
+    },
+  };
+
+  // Set up the chart canvas
+  const chartCallback = (ChartJS) => {
+    if (!ChartJS?.defaults?.global) {
+      console.log('ChartJS', ChartJS?.defaults);
+      return;
+    }
+    ChartJS.defaults.global.defaultFontFamily = 'Arial';
+    ChartJS.defaults.global.defaultFontSize = 16;
+    ChartJS.plugins.register({
+      beforeDraw: (chart) => {
+        const ctx = chart.canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, chart.width, chart.height);
+      },
+    });
+  };
+
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback });
+  return chartJSNodeCanvas.renderToBuffer(configuration);
+}
+
+
+
+  

@@ -7,7 +7,6 @@ import userRoutes from "./routes/user.js";
 import projectRoutes from "./routes/project.js";
 import productRoutes from "./routes/product.js";
 import {executeCorn} from "./cornCalculatePS.js";
-import {generateAndSendPDF} from "./genrateDocument.js"
 const rawData = fs.readFileSync("./swagger.json");
 
 const swaggerDocument = JSON.parse(rawData);
@@ -16,7 +15,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use("/api/user", userRoutes);
 
@@ -42,6 +40,8 @@ app.get("/api/protected", (req, res) => {
     res.status(401).json({ error: "Invalid token" });
   }
 });
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Start the server
 app.listen(5500, () => {
