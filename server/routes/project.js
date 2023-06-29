@@ -154,7 +154,7 @@ router.get("/generateApi/:id", verifyToken, async(req, res) => {
     } 
   const projectDetails = await Project.findOne({id: project}).lean();
   if(projectDetails?.isReportGeneratd){
-    // return res.status(400).json({ message: "Report already generated" });
+    return res.status(400).json({ message: "Report already generated" });
   }
   const userDetails = await User.findOne({_id: user}).lean();
   if( pvDetails && userDetails) {
