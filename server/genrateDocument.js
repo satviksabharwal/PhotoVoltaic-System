@@ -26,7 +26,7 @@ export async function generateAndSendPDF(data, email, projectDetails) {
     const productdetails = await Product.findOne({id: productData.product}).lean();
     const chartImage = await generateChartImage(productData.hourWiseData);
     const page = doc.addPage()
-    page.fontSize(12).text("Product name", productdetails?.name);
+    page.fontSize(12).text(`Product name ${productdetails?.name}`);
     page.image(chartImage, { width: 500, height: 300, align: 'center' });
   }
 
