@@ -1,12 +1,12 @@
 import cron from "node-cron";
 import axios from "axios";
-import {calculateElectricityProduced, getRandomNumber, weathertoken} from "./commonFunctions.js";
+import {calculateElectricityProduced, getRandomNumber, weathertoken, convertToDoubleDigit} from "./commonFunctions.js";
 import { Product, PvDetails } from "./db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Define the cron schedule to run every hour
 export const executeCorn = () => {
-  cron.schedule('5 6-20 * * *', async () => {
+  cron.schedule('5 * * * *', async () => {
     try {
       
       const currentdate = new Date();
