@@ -221,6 +221,27 @@ const ProductPage = () => {
     setFormSubmitted(!formSubmitted);
   };
 
+  const generateReportHandle = (event) => {
+    event.preventDefault();
+    try {
+      const url = `http://localhost:5500/api/project/generateApi/${params?.projectId}`;
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      fetchNewProjectName();
+      axios.get(url, config).then(
+        (response) => {
+          toast.success(response.data.message);
+        },
+        (error) => {
+          toast.error(error.data.message);
+        }
+      );
+    } catch (error) {
+      toast.error(error);
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -265,6 +286,7 @@ const ProductPage = () => {
               variant="contained"
               style={{ backgroundColor: `${reportGenerated ? "grey" : "#48B2E3"}`, color: "white" }}
               disabled={reportGenerated}
+              onClick={generateReportHandle}
             >
               {reportGenerated ? "Report Generated" : "Generate Report"}
             </Button>
