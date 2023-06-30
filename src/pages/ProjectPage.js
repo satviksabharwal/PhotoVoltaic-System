@@ -95,7 +95,7 @@ export default function ProjectPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Projects </title>
+        <title> Projects </title>
       </Helmet>
 
       <Container maxWidth="l">

@@ -106,7 +106,7 @@ export default function DashboardAppPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard | Minimal UI </title>
+        <title> Dashboard | PV System </title>
       </Helmet>
 
       <Container maxWidth="l">
@@ -117,7 +117,7 @@ export default function DashboardAppPage() {
           <Grid item xs={12} sm={6} md={6}>
             <AppWidgetSummary
               title="Total Projects"
-              total={projectData?.length || 0}
+              total={projectData?.length || "0"}
               color="info"
               icon={"ant-design:windows-filled"}
             />
@@ -125,7 +125,7 @@ export default function DashboardAppPage() {
           <Grid item xs={12} sm={6} md={6}>
             <AppWidgetSummary
               title="Total Products"
-              total={productData?.length || 0}
+              total={productData?.length || "0"}
               color="error"
               icon={"ant-design:bug-filled"}
             />
@@ -134,7 +134,7 @@ export default function DashboardAppPage() {
             <VisualMap productData={productData} />
           </Grid>
           {projectName?.length > 0 ? (
-            <Grid item xs={12} md={6} lg={8}>
+            <Grid item xs={12} md={6} lg={6}>
               <AppWebsiteVisits
                 title="No. of Products as per Project"
                 subheader=""
@@ -162,8 +162,13 @@ export default function DashboardAppPage() {
               />
             </Grid>
           ) : (
-            <Grid item xs={12} md={6} lg={8}>
-              <AppWebsiteVisits title="No. of Products as per Project" subheader="" chartLabels={[]} chartData={[]} />
+            <Grid item xs={12} md={6} lg={6}>
+              <AppWebsiteVisits
+                title="No. of Products as per Project"
+                subheader="No Project Created so far"
+                chartLabels={[]}
+                chartData={[]}
+              />
             </Grid>
           )}
           {/* <Grid item xs={12} md={6} lg={4}>
@@ -183,11 +188,15 @@ export default function DashboardAppPage() {
               ]}
             />
           </Grid> */}
-          <Grid item xs={12} md={6} lg={8}>
+          <Grid item xs={12} md={6} lg={6}>
             {chartData?.length > 0 ? (
               <AppConversionRates title="PV Value Statistics" subheader="" chartData={chartData} />
             ) : (
-              <AppConversionRates title="PV Value Statistics" subheader="" chartData={[{ label: "", value: 0 }]} />
+              <AppConversionRates
+                title="PV Value Statistics"
+                subheader="No Product created so far"
+                chartData={[{ label: "", value: 0 }]}
+              />
             )}
           </Grid>
           {/* <Grid item xs={12} md={6} lg={4}>

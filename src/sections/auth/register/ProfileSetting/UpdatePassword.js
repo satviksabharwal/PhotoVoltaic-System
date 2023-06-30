@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Checkbox, IconButton, InputAdornment, Stack, TextField, Typography } from "@mui/material";
@@ -141,8 +141,8 @@ const UpdatePassword = () => {
           size="large"
           type="submit"
           variant="contained"
-          style={{ backgroundColor: "#DC143C", marginTop: "20px" }}
-          name="deleteAccount"
+          style={{ backgroundColor: "#48B2E3", marginTop: "20px" }}
+          name="updateAccount"
         >
           Update Password
         </LoadingButton>
