@@ -35,7 +35,6 @@ const defaultFormFields = {
   inclination: "",
   area: "",
 };
-const GENERATEREPORT = false;
 
 const ProductPage = () => {
   const params = useParams();
@@ -49,6 +48,7 @@ const ProductPage = () => {
   const [onClickLatlang, setOnClickLatLang] = useState({ lat: "", lng: "" });
   const currentUser = useSelector(selectCurrentUser);
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [reportGenerated, setReportGenerated] = useState(false);
   const navigate = useNavigate();
 
   const handleOpen = () => {
@@ -89,6 +89,7 @@ const ProductPage = () => {
       };
       await axios.get(url, config).then(
         (response) => {
+          setReportGenerated(response.data.isReportGeneratd);
           setProjectName(response.data.name);
         },
         (error) => {
@@ -220,6 +221,8 @@ const ProductPage = () => {
     setFormSubmitted(!formSubmitted);
   };
 
+  // useEffect(() => {}, [reportGenerated]);
+  console.log(reportGenerated);
   return (
     <>
       <Helmet>
@@ -231,7 +234,7 @@ const ProductPage = () => {
             <Typography variant="h4" sx={{ mb: 5 }}>
               {projectName}
             </Typography>
-            {GENERATEREPORT ? (
+            {reportGenerated ? (
               <></>
             ) : (
               <>
@@ -252,63 +255,83 @@ const ProductPage = () => {
             <Button
               variant="contained"
               style={{
-                backgroundColor: `${GENERATEREPORT ? "orange" : "#5ac85a"} `,
+                backgroundColor: `${reportGenerated ? "orange" : "#5ac85a"} `,
                 color: "white",
                 marginRight: "20px",
               }}
               disabled
             >
-              {GENERATEREPORT ? "Inactive" : "Active"}
+              {reportGenerated ? "Inactive" : "Active"}
             </Button>
             <Button
               variant="contained"
-              style={{ backgroundColor: `${GENERATEREPORT ? "grey" : "#48B2E3"}`, color: "white" }}
-              disabled={GENERATEREPORT}
+              style={{ backgroundColor: `${reportGenerated ? "grey" : "#48B2E3"}`, color: "white" }}
+              disabled={reportGenerated}
             >
-              {GENERATEREPORT ? "Report Generated" : "Generate Report"}
+              {reportGenerated ? "Report Generated" : "Generate Report"}
             </Button>
           </div>
         </div>
         <div style={{ marginBottom: "50px", display: "flex" }}>
-          <MapContainer
-            center={[50.8282, 12.9209]}
-            zoom={7}
-            scrollWheelZoom={false}
-            style={{
-              maxHeight: "560px",
-              marginLeft: "0px",
-              marginRight: `${GENERATEREPORT ? "0px" : "30px"}`,
-              flex: `${GENERATEREPORT ? "1" : "0.7"}`,
-            }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {productData?.map((product) => (
-              <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
-                <Popup>
-                  <h3 style={{ textAlign: "center" }}>{product.name}</h3>
-                </Popup>
-              </Marker>
-            ))}
-            {GENERATEREPORT ? (
-              <></>
-            ) : (
-              <>
-                <Marker
-                  position={[
-                    onClickLatlang.lat === "" ? "" : onClickLatlang.lat,
-                    onClickLatlang.lng === "" ? "" : onClickLatlang.lng,
-                  ]}
-                  key={"On Double Click Marker"}
-                />
-                <MapEvents handleMapDoubleClick={handleMapDoubleClick} />
-              </>
-            )}
-          </MapContainer>
+          {reportGenerated ? (
+            <MapContainer
+              center={[50.8282, 12.9209]}
+              zoom={7}
+              scrollWheelZoom={false}
+              style={{
+                maxHeight: "560px",
+                marginLeft: "0px",
+                marginRight: "0px",
+                flex: "1",
+              }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {productData?.map((product) => (
+                <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
+                  <Popup>
+                    <h3 style={{ textAlign: "center" }}>{product.name}</h3>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          ) : (
+            <MapContainer
+              center={[50.8282, 12.9209]}
+              zoom={7}
+              scrollWheelZoom={false}
+              style={{
+                maxHeight: "560px",
+                marginLeft: "0px",
+                marginRight: "30px",
+                flex: "0.7",
+              }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {productData?.map((product) => (
+                <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
+                  <Popup>
+                    <h3 style={{ textAlign: "center" }}>{product.name}</h3>
+                  </Popup>
+                </Marker>
+              ))}
+              <Marker
+                position={[
+                  onClickLatlang.lat === "" ? "" : onClickLatlang.lat,
+                  onClickLatlang.lng === "" ? "" : onClickLatlang.lng,
+                ]}
+                key={"On Double Click Marker"}
+              />
+              <MapEvents handleMapDoubleClick={handleMapDoubleClick} />
+            </MapContainer>
+          )}
 
-          {GENERATEREPORT ? (
+          {reportGenerated ? (
             <></>
           ) : (
             <form
@@ -486,7 +509,7 @@ const ProductPage = () => {
         ) : (
           <></>
         )}
-        <ProductTableContainer isProductUpdated={isProductUpdated} reportGenerated={GENERATEREPORT} />
+        <ProductTableContainer isProductUpdated={isProductUpdated} reportGenerated={reportGenerated} />
       </Container>
     </>
   );

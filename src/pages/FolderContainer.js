@@ -4,9 +4,7 @@ import folderIcon from "./foldericon.png";
 import grayIcon from "./grayFolder.png";
 import "./FolderContainer.css";
 
-const GENERATEREPORT = false;
-
-const FolderContainer = ({ folderName, folderId }) => {
+const FolderContainer = ({ folderName, folderId, isReportGeneratd }) => {
   const navigate = useNavigate();
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
@@ -22,9 +20,9 @@ const FolderContainer = ({ folderName, folderId }) => {
   return (
     <div className="folder-card" onClick={handleClick} onKeyDown={handleKeyDown} role="button" tabIndex={0}>
       <div className="image-container">
-        <img src={GENERATEREPORT ? grayIcon : folderIcon} alt="Folder Icon" />{" "}
+        <img src={isReportGeneratd ? grayIcon : folderIcon} alt="Folder Icon" />
       </div>
-      <div className="folder-name" style={{ color: GENERATEREPORT ? "gray" : "black" }}>
+      <div className="folder-name" style={{ color: isReportGeneratd ? "gray" : "black" }}>
         {folderName}
       </div>
     </div>
