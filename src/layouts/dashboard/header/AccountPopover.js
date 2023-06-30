@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 import { setCurrentUserAction } from "../../../store/user/user.action";
 import { selectCurrentUser } from "../../../store/user/user.selector";
 import account from "../../../_mock/account";
-import { signOutUser } from "../../../utils/firebase/firebase.utils";
 
 // ----------------------------------------------------------------------
 

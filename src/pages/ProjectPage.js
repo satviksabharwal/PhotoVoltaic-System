@@ -55,8 +55,6 @@ export default function ProjectPage() {
       };
       await axios.post(url, { name: formField }, config).then(
         (response) => {
-          // localStorage.setItem("token", response);
-          console.log(response);
           toast.success(response.data.message);
           resetFormFields();
           setOpen(false);
@@ -152,7 +150,12 @@ export default function ProjectPage() {
         >
           {projectData?.map((project) =>
             project?.name && project?.id ? (
-              <FolderContainer folderName={project?.name} folderId={project?.id} key={project?.id} />
+              <FolderContainer
+                folderName={project?.name}
+                folderId={project?.id}
+                key={project?.id}
+                isReportGeneratd={project?.isReportGeneratd}
+              />
             ) : (
               <></>
             )
