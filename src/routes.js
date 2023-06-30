@@ -12,6 +12,7 @@ import ProfileSetting from "./pages/ProfileSetting";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProjectPage from "./pages/ProjectPage";
 import ProductPage from "./pages/ProductPage";
+import ProductVisualization from "./pages/ProductVisualization";
 
 // ----------------------------------------------------------------------
 
@@ -25,7 +26,8 @@ export default function Router() {
         { path: "app", element: <DashboardAppPage /> },
         { path: "profile-setting", element: <ProfileSetting /> },
         { path: "projects", element: <ProjectPage /> },
-        { path: "projects/:id", element: <ProductPage /> },
+        { path: "projects/:projectId", element: <ProductPage /> },
+        { path: "projects/:projectId/:productId", element: <ProductVisualization /> },
       ],
     },
     {

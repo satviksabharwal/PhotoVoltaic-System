@@ -8,7 +8,12 @@ import "./VisualMap.css";
 const VisualMap = (productData) => (
   <>
     <Container maxWidth="l" style={{ padding: "0px" }}>
-      <MapContainer center={[50.8282, 12.9209]} zoom={4} scrollWheelZoom={false} style={{ borderRadius: "1%" }}>
+      <MapContainer
+        center={[50.8282, 12.9209]}
+        zoom={4}
+        scrollWheelZoom={false}
+        style={{ borderRadius: "1%", height: "400px" }}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

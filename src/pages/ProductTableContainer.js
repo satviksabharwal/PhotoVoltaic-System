@@ -1,5 +1,6 @@
 import {
   Box,
+  Fab,
   Modal,
   Stack,
   Table,
@@ -16,8 +17,9 @@ import { useSelector } from "react-redux";
 import Paper from "@mui/material/Paper";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import EqualizerIcon from "@mui/icons-material/Equalizer";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { LoadingButton } from "@mui/lab";
 import { selectCurrentUser } from "../store/user/user.selector";
@@ -50,6 +52,7 @@ const defaultFormFields = {
 const ProductTableContainer = (props) => {
   const { isProductUpdated, reportGenerated } = props;
   const params = useParams();
+  const navigate = useNavigate();
   const currentUser = useSelector(selectCurrentUser);
   const [productData, setProductData] = useState();
   const [open, setOpen] = useState(false);
@@ -115,7 +118,7 @@ const ProductTableContainer = (props) => {
 
   const getAllProductData = () => {
     try {
-      const url = `http://localhost:5500/api/product?projectId=${params?.id}`;
+      const url = `http://localhost:5500/api/product?projectId=${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
@@ -161,6 +164,10 @@ const ProductTableContainer = (props) => {
     getAllProductData();
     setNewCreatedProduct(false);
   }
+
+  const productVisualizationHandle = useCallback(async (id, productName) => {
+    navigate(`/dashboard/projects/${params?.projectId}/${id}`, { state: productName });
+  }, []);
 
   return (
     <>
@@ -292,6 +299,7 @@ const ProductTableContainer = (props) => {
                   <StyledTableCell align="right">Delete</StyledTableCell>
                 </>
               )}
+              <StyledTableCell align="center">Data Visualisation</StyledTableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -299,15 +307,15 @@ const ProductTableContainer = (props) => {
               productData?.map((data, index) => (
                 <StyledTableRow key={index}>
                   <StyledTableCell component="th" scope="row">
-                    {data.name}
+                    {data?.name}
                   </StyledTableCell>
-                  <StyledTableCell align="right">{data.latitude.toFixed(4)}</StyledTableCell>
-                  <StyledTableCell align="right">{data.longitude.toFixed(4)}</StyledTableCell>
-                  <StyledTableCell align="right">{data.powerPeak}</StyledTableCell>
-                  <StyledTableCell align="right">{data.orientation}</StyledTableCell>
-                  <StyledTableCell align="right">{data.inclination}</StyledTableCell>
-                  <StyledTableCell align="right">{data.area}</StyledTableCell>
-                  <StyledTableCell align="right">{data.pvValue}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.latitude.toFixed(4)}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.longitude.toFixed(4)}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.powerPeak}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.orientation}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.inclination}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.area}</StyledTableCell>
+                  <StyledTableCell align="right">{data?.pvValue}</StyledTableCell>
                   {reportGenerated ? (
                     <></>
                   ) : (
@@ -318,22 +326,22 @@ const ProductTableContainer = (props) => {
                             sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
                             onClick={() => {
                               setEditData({
-                                latitude: data.latitude,
-                                longitude: data.longitude,
-                                name: data.name,
-                                powerPeak: data.powerPeak,
-                                orientation: data.orientation,
-                                inclination: data.inclination,
-                                area: data.area,
+                                latitude: data?.latitude,
+                                longitude: data?.longitude,
+                                name: data?.name,
+                                powerPeak: data?.powerPeak,
+                                orientation: data?.orientation,
+                                inclination: data?.inclination,
+                                area: data?.area,
                               });
                               setFormFields({
-                                latitude: data.latitude,
-                                longitude: data.longitude,
-                                name: data.name,
-                                powerPeak: data.powerPeak,
-                                orientation: data.orientation,
-                                inclination: data.inclination,
-                                area: data.area,
+                                latitude: data?.latitude,
+                                longitude: data?.longitude,
+                                name: data?.name,
+                                powerPeak: data?.powerPeak,
+                                orientation: data?.orientation,
+                                inclination: data?.inclination,
+                                area: data?.area,
                               });
                               setProductUpdateId(data?.id);
                               handleOpen();
@@ -344,17 +352,32 @@ const ProductTableContainer = (props) => {
                       <StyledTableCell align="right" sx={{ m: 0 }}>
                         <Tooltip title="Click to delete the Product.">
                           <DeleteIcon
-                            onClick={() => deletehandle(data.id)}
+                            onClick={() => deletehandle(data?.id)}
                             sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
                           />
                         </Tooltip>
                       </StyledTableCell>
                     </>
                   )}
+                  <StyledTableCell
+                    align="center"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => productVisualizationHandle(data?.id, data?.name)}
+                  >
+                    <Fab
+                      variant="extended"
+                      size="small"
+                      style={{ backgroundColor: "#48B2E3", color: "#fff" }}
+                      aria-label="add"
+                    >
+                      <span style={{ marginLeft: "1px" }}>Open</span>
+                      <EqualizerIcon sx={{ ml: 1 }} />
+                    </Fab>
+                  </StyledTableCell>
                 </StyledTableRow>
               ))
             ) : (
-              <StyledTableCell colSpan={10} align="center" style={{ border: "1px solid #48B2E3" }}>
+              <StyledTableCell colSpan={11} align="center" style={{ border: "1px solid #48B2E3" }}>
                 <img
                   id="nodata"
                   src={NoData}

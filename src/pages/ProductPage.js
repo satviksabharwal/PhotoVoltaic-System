@@ -83,7 +83,7 @@ const ProductPage = () => {
 
   const fetchNewProjectName = async () => {
     try {
-      const url = `http://localhost:5500/api/project?projectId=${params.id}`;
+      const url = `http://localhost:5500/api/project?projectId=${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
@@ -104,7 +104,7 @@ const ProductPage = () => {
   const deleteModalHandle = async (event) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/project/delete/${params.id}`;
+      const url = `http://localhost:5500/api/project/delete/${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
@@ -126,7 +126,7 @@ const ProductPage = () => {
   const handleRegister = async (event) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/project/update/${params.id}`;
+      const url = `http://localhost:5500/api/project/update/${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
@@ -165,7 +165,7 @@ const ProductPage = () => {
             orientation,
             inclination: +inclination,
             area: +area,
-            project: params?.id,
+            project: params?.projectId,
           },
           config
         )
@@ -189,7 +189,7 @@ const ProductPage = () => {
 
   const getAllProductLocation = () => {
     try {
-      const url = `http://localhost:5500/api/product?projectId=${params?.id}`;
+      const url = `http://localhost:5500/api/product?projectId=${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
@@ -221,12 +221,10 @@ const ProductPage = () => {
     setFormSubmitted(!formSubmitted);
   };
 
-  // useEffect(() => {}, [reportGenerated]);
-  console.log(reportGenerated);
   return (
     <>
       <Helmet>
-        <title>{`Dashboard: ${projectName}`}</title>
+        <title>{`${projectName}`}</title>
       </Helmet>
       <Container maxWidth="l" sx={{ marginLeft: "auto", paddingLeft: "0px" }}>
         <div style={{ display: "flex" }}>
