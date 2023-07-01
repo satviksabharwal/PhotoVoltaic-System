@@ -26,10 +26,12 @@ const DeleteAccount = () => {
   const handleRegister = async (event) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/user/${currentUser.email}`;
-      await axios.delete(url).then(
+      const url = `http://localhost:5500/api/user/${currentUser?.email}`;
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      await axios.delete(url, config).then(
         (response) => {
-          // localStorage.setItem("token", response);
           toast.success(response.data.message);
           dispatch(setCurrentUserAction({ undefined }));
         },
@@ -38,7 +40,6 @@ const DeleteAccount = () => {
         }
       );
       resetFormFields();
-      window.localStorage.clear();
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error(error);

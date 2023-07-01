@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 // routes
@@ -10,11 +10,7 @@ import ThemeProvider from "./theme";
 import ScrollToTop from "./components/scroll-to-top";
 import { StyledChart } from "./components/chart";
 import { selectCurrentUser } from "./store/user/user.selector";
-// actions
-import { setCurrentUserAction } from "./store/user/user.action";
 // ----------------------------------------------------------------------
-
-// export const CurrentUserMetadataContext = createContext({});
 
 export default function App() {
   const navigate = useNavigate();
@@ -28,10 +24,10 @@ export default function App() {
         location.pathname === "/tac" ||
         location.pathname === "/forgotpassword" ||
         location.pathname === "/404") &&
-      currentUser.email !== undefined
+      currentUser?.email !== undefined
     ) {
       navigate("/dashboard/app");
-    } else if (currentUser === undefined || currentUser.email === undefined) {
+    } else if (currentUser === undefined || currentUser?.email === undefined) {
       if (
         (location.pathname === "/login" && currentUser?.email === undefined) ||
         (location.pathname === "/register" && currentUser?.email === undefined) ||
@@ -46,19 +42,10 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      {/* <CurrentUserMetadataContext.Provider
-        value={{
-          currentUserMetadata,
-          setUserMetadata,
-          ownedFilesMetadata,
-          setOwnedFilesMetadata,
-        }}
-      > */}
       <ToastContainer />
       <ScrollToTop />
       <StyledChart />
       <Router />
-      {/* </CurrentUserMetadataContext.Provider> */}
     </ThemeProvider>
   );
 }
