@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
-import { faker } from "@faker-js/faker";
 import { toast } from "react-toastify";
 import axios from "axios";
 // @mui
@@ -10,9 +9,6 @@ import { useTheme } from "@mui/material/styles";
 import { Grid, Container, Typography } from "@mui/material";
 // selector
 import { selectCurrentUser } from "../store/user/user.selector";
-
-// components
-import Iconify from "../components/iconify";
 // sections
 import {
   AppCurrentVisits,
@@ -102,10 +98,15 @@ export default function DashboardAppPage() {
     getAllProductData();
   }, []);
 
+  const chartData = productData?.map((product) => ({
+    label: product.name,
+    value: product.pvValue,
+  }));
+
   return (
     <>
       <Helmet>
-        <title> Dashboard | Minimal UI </title>
+        <title> Dashboard | PV System </title>
       </Helmet>
 
       <Container maxWidth="l">
@@ -116,7 +117,7 @@ export default function DashboardAppPage() {
           <Grid item xs={12} sm={6} md={6}>
             <AppWidgetSummary
               title="Total Projects"
-              total={projectData?.length}
+              total={projectData?.length || "0"}
               color="info"
               icon={"ant-design:windows-filled"}
             />
@@ -124,23 +125,16 @@ export default function DashboardAppPage() {
           <Grid item xs={12} sm={6} md={6}>
             <AppWidgetSummary
               title="Total Products"
-              total={productData?.length}
+              total={productData?.length || "0"}
               color="error"
               icon={"ant-design:bug-filled"}
             />
           </Grid>
-          {/* <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Item Orders" total={1723315} color="warning" icon={"ant-design:windows-filled"} />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <AppWidgetSummary title="Bug Reports" total={234} color="error" icon={"ant-design:bug-filled"} />
-          </Grid> */}
           <Grid item xs={12} md={12} lg={12}>
             <VisualMap productData={productData} />
           </Grid>
-          {projectName.length > 0 ? (
-            <Grid item xs={12} md={6} lg={8}>
+          {projectName?.length > 0 ? (
+            <Grid item xs={12} md={6} lg={6}>
               <AppWebsiteVisits
                 title="No. of Products as per Project"
                 subheader=""
@@ -168,36 +162,16 @@ export default function DashboardAppPage() {
               />
             </Grid>
           ) : (
-            <Grid item xs={12} md={6} lg={8}>
+            <Grid item xs={12} md={6} lg={6}>
               <AppWebsiteVisits
                 title="No. of Products as per Project"
-                subheader=""
-                chartLabels={""}
+                subheader="No Project Created so far"
+                chartLabels={[]}
                 chartData={[]}
-                // chartData={[
-                //   {
-                //     name: "No. of Product",
-                //     type: "column",
-                //     fill: "solid",
-                //     data: productLength,
-                //   },
-                // {
-                //   name: "Team B",
-                //   type: "area",
-                //   fill: "gradient",
-                //   data: [44, 55, 41, 67, 22],
-                // },
-                // {
-                //   name: "Team C",
-                //   type: "line",
-                //   fill: "solid",
-                //   data: [30, 25, 36, 30],
-                // },
-                // ]}
               />
             </Grid>
           )}
-          <Grid item xs={12} md={6} lg={4}>
+          {/* <Grid item xs={12} md={6} lg={4}>
             <AppCurrentVisits
               title="Current Visits"
               chartData={[
@@ -213,26 +187,19 @@ export default function DashboardAppPage() {
                 theme.palette.error.main,
               ]}
             />
+          </Grid> */}
+          <Grid item xs={12} md={6} lg={6}>
+            {chartData?.length > 0 ? (
+              <AppConversionRates title="PV Value Statistics" subheader="" chartData={chartData} />
+            ) : (
+              <AppConversionRates
+                title="PV Value Statistics"
+                subheader="No Product created so far"
+                chartData={[{ label: "", value: 0 }]}
+              />
+            )}
           </Grid>
-          <Grid item xs={12} md={6} lg={8}>
-            <AppConversionRates
-              title="Conversion Rates"
-              subheader="(+43%) than last year"
-              chartData={[
-                { label: "Italy", value: 400 },
-                { label: "Japan", value: 430 },
-                { label: "China", value: 448 },
-                { label: "Canada", value: 470 },
-                { label: "France", value: 540 },
-                { label: "Germany", value: 580 },
-                { label: "South Korea", value: 690 },
-                { label: "Netherlands", value: 1100 },
-                { label: "United States", value: 1200 },
-                { label: "United Kingdom", value: 1380 },
-              ]}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={4}>
+          {/* <Grid item xs={12} md={6} lg={4}>
             <AppCurrentSubject
               title="Current Subject"
               chartLabels={["English", "History", "Physics", "Geography", "Chinese", "Math"]}
@@ -243,7 +210,7 @@ export default function DashboardAppPage() {
               ]}
               chartColors={[...Array(6)].map(() => theme.palette.text.secondary)}
             />
-          </Grid>
+          </Grid> */}
         </Grid>
       </Container>
     </>

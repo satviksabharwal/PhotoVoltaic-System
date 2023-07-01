@@ -6,8 +6,6 @@ import { LoadingButton } from "@mui/lab";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { useDispatch } from "react-redux";
-import { setCurrentUserAction } from "../../../store/user/user.action";
 // components
 import Iconify from "../../../components/iconify";
 
@@ -15,7 +13,6 @@ const defaultFormFields = { displayName: "", email: "", password: "", confirmPas
 
 export default function RegisterForm() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [formFields, setFormFields] = useState(defaultFormFields);
   const { displayName, email, password, confirmPassword } = formFields;
@@ -39,8 +36,7 @@ export default function RegisterForm() {
           (response) => {
             toast.success(response.data.message);
             resetFormFields();
-            dispatch(setCurrentUserAction({ displayName, email }));
-            navigate("/dashboard", { replace: true });
+            navigate("/login", { replace: true });
           },
           (error) => {
             toast.error(error.response.data.error);

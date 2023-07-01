@@ -1,15 +1,13 @@
-import PropTypes from 'prop-types';
+import PropTypes from "prop-types";
 // @mui
-import { styled } from '@mui/material/styles';
-import { Box, Stack, AppBar, Toolbar, IconButton } from '@mui/material';
+import { styled } from "@mui/material/styles";
+import { Box, Stack, AppBar, Toolbar, IconButton } from "@mui/material";
 // utils
-import { bgBlur } from '../../../utils/cssStyles';
+import { bgBlur } from "../../../utils/cssStyles";
 // components
-import Iconify from '../../../components/iconify';
-//
-import Searchbar from './Searchbar';
-import AccountPopover from './AccountPopover';
-import LanguagePopover from './LanguagePopover';
+import Iconify from "../../../components/iconify";
+import AccountPopover from "./AccountPopover";
+import LanguagePopover from "./LanguagePopover";
 // ----------------------------------------------------------------------
 
 const NAV_WIDTH = 280;
@@ -20,15 +18,15 @@ const HEADER_DESKTOP = 92;
 
 const StyledRoot = styled(AppBar)(({ theme }) => ({
   ...bgBlur({ color: theme.palette.background.default }),
-  boxShadow: 'none',
-  [theme.breakpoints.up('lg')]: {
+  boxShadow: "none",
+  [theme.breakpoints.up("lg")]: {
     width: `calc(100% - ${NAV_WIDTH + 1}px)`,
   },
 }));
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: HEADER_MOBILE,
-  [theme.breakpoints.up('lg')]: {
+  [theme.breakpoints.up("lg")]: {
     minHeight: HEADER_DESKTOP,
     padding: theme.spacing(0, 5),
   },
@@ -48,14 +46,13 @@ export default function Header({ onOpenNav }) {
           onClick={onOpenNav}
           sx={{
             mr: 1,
-            color: 'text.primary',
-            display: { lg: 'none' },
+            color: "text.primary",
+            display: { lg: "none" },
           }}
         >
           <Iconify icon="eva:menu-2-fill" />
         </IconButton>
 
-        <Searchbar />
         <Box sx={{ flexGrow: 1 }} />
 
         <Stack
