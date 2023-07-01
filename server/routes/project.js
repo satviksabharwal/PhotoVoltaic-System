@@ -3,6 +3,7 @@ import {verifyToken, getUserIdFromtoken} from "../commonFunctions.js"
 import { Product, Project, PvDetails, User } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
 import {generateAndSendPDF} from "../genrateDocument.js"
+import moment from "moment/moment.js";
 
 const router = express.Router();
 
@@ -39,12 +40,14 @@ router.post("/create", verifyToken, async (req, res) => {
 
     // Generate a unique ID using UUID
     const id = uuidv4();
-
+    const createdDate = moment().format('YYYY-MM-DD')
+    
     // Create a new project
     const project = new Project({
       id,
       name,
-      user
+      user,
+      createdDate 
     });
 
     // Save the project to the database
@@ -125,15 +128,26 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
 router.get("/getPVData", verifyToken, async(req, res) => {
   try {
     // Retrieve all pvDetails from the database
-    const user = getUserIdFromtoken(req);
+    // const user = getUserIdFromtoken(req);
     const project = req.query.projectId;
-    let pvDetails;
+    const product = req.query.productId;
+    if(!project && !product) {
+      return res.json({message: 'Provide any one product or project id'});
+    }
+    if(project && product) {
+      return res.json({message: 'Provide any one product or project id'});
+    }
     if(project){
       // await PvDetails.deleteMany();
-      pvDetails = await PvDetails.find({project});
+      const pvDetails = await PvDetails.find({project});
+      return res.json(pvDetails);
+    } else if(product){
+      // await PvDetails.deleteMany();
+      const pvDetails = await PvDetails.findOne({product});
+      return res.json(pvDetails);
     } 
+    return res.json({message: 'No able to fetch'});
     
-    res.json(pvDetails);
   } catch (error) {
     console.error("Error in get pv details API:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -162,9 +176,10 @@ router.get("/generateApi/:id", verifyToken, async(req, res) => {
     .then(async () => {
       console.log('PDF sent successfully!');
       const result = await Project.updateOne({ id: project }, { $set: { isReportGeneratd: true } });
-
-    
-      res.json({ message: `Report sent to email` });
+      if (result.n === 0) {
+        res.json({ message: `Report sent to email` });
+      }
+      
     })
     .catch((error) => {
       console.error('Error sending PDF:', error);

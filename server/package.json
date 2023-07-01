@@ -21,6 +21,7 @@
     "joi": "^17.9.2",
     "joi-password-complexity": "^5.1.0",
     "jsonwebtoken": "^9.0.0",
+    "moment": "^2.29.4",
     "mongoose": "^7.2.4",
     "node-cron": "^3.0.2",
     "nodemailer": "^6.9.3",
