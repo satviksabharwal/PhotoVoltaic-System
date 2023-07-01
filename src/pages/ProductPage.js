@@ -297,7 +297,7 @@ const ProductPage = () => {
               zoom={7}
               scrollWheelZoom={false}
               style={{
-                maxHeight: "560px",
+                maxHeight: "500px",
                 marginLeft: "0px",
                 marginRight: "0px",
                 flex: "1",
@@ -321,7 +321,7 @@ const ProductPage = () => {
               zoom={7}
               scrollWheelZoom={false}
               style={{
-                maxHeight: "560px",
+                maxHeight: "500px",
                 marginLeft: "0px",
                 marginRight: "30px",
                 flex: "0.7",

@@ -1,17 +1,56 @@
 import { Container, Fab, Grid, Typography } from "@mui/material";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 // @mui
 import { useTheme } from "@mui/material/styles";
-import { AppCurrentSubject, AppCurrentVisits } from "../sections/@dashboard/app";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { selectCurrentUser } from "../store/user/user.selector";
+import { AppCurrentSubject, AppWebsiteVisits } from "../sections/@dashboard/app";
 
 const ProductVisualization = () => {
   const params = useParams();
   const { state } = useLocation();
   const theme = useTheme();
-  console.log(state, params);
+  const currentUser = useSelector(selectCurrentUser);
+  const [productPvData, setProductPvData] = useState([]);
+  const [dateTime, setDateTime] = useState([]);
+  const [powerPeakData, setPowerPeakData] = useState([]);
+  const [pvValue, setPvValue] = useState([]);
+
+  useEffect(() => {
+    try {
+      const url = `http://localhost:5500/api/project/getPVData?productId=${params?.productId}`;
+      const config = {
+        headers: { Authorization: currentUser?.tokenId },
+      };
+      axios.get(url, config).then(
+        (response) => {
+          setDateTime([]);
+          setPowerPeakData([]);
+          response.data.hourWiseData?.map((product) => setDateTime((dateTime) => [...dateTime, product?.dateAndTime]));
+          response.data.hourWiseData?.map((product) =>
+            setPowerPeakData((powerPeakData) => [...powerPeakData, product?.powerPeak])
+          );
+          response.data.hourWiseData?.map((product) => setPvValue((pvValue) => [...pvValue, product?.pvValue]));
+          setProductPvData(response.data.hourWiseData);
+        },
+        (error) => {
+          toast.error(error.data.message);
+        }
+      );
+    } catch (error) {
+      toast.error(error);
+    }
+  }, []);
+
+  const chartData = productPvData?.map((product) => ({
+    name: product.dateAndTime,
+    data: [product.pvValue, product.powerPeak, product?.solarRad, product?.inclination, product?.area],
+  }));
 
   return (
     <>
@@ -31,32 +70,41 @@ const ProductVisualization = () => {
           </Fab>
         </Typography>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6} lg={4}>
-            <AppCurrentVisits
-              title="Current Visits"
+          <Grid item xs={12} md={6} lg={6}>
+            <AppWebsiteVisits
+              title="Power Peak Every Hour"
+              subheader=""
+              chartLabels={dateTime}
               chartData={[
-                { label: "America", value: 4344 },
-                { label: "Asia", value: 5435 },
-                { label: "Europe", value: 1443 },
-                { label: "Africa", value: 4443 },
+                {
+                  name: "Power Peak value",
+                  type: "area",
+                  fill: "gradient",
+                  data: powerPeakData,
+                },
               ]}
-              chartColors={[
-                theme.palette.primary.main,
-                theme.palette.info.main,
-                theme.palette.warning.main,
-                theme.palette.error.main,
+            />
+          </Grid>
+          <Grid item xs={12} md={6} lg={6}>
+            <AppWebsiteVisits
+              title="PV Value every hour"
+              subheader=""
+              chartLabels={dateTime}
+              chartData={[
+                {
+                  name: "PV Value",
+                  type: "area",
+                  fill: "solid",
+                  data: pvValue,
+                },
               ]}
             />
           </Grid>
           <Grid item xs={12} md={6} lg={4}>
             <AppCurrentSubject
-              title="Current Subject"
-              chartLabels={["English", "History", "Physics", "Geography", "Chinese", "Math"]}
-              chartData={[
-                { name: "Series 1", data: [80, 50, 30, 40, 100, 20] },
-                { name: "Series 2", data: [20, 30, 40, 80, 20, 80] },
-                { name: "Series 3", data: [44, 76, 78, 13, 43, 10] },
-              ]}
+              title="Current Statstics"
+              chartLabels={["PV value", "Power Peak", "Solar Irradiance", "Inclination", "Area"]}
+              chartData={chartData}
               chartColors={[...Array(6)].map(() => theme.palette.text.secondary)}
             />
           </Grid>
