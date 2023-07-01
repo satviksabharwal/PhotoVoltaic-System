@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
 // Token verification middleware
 export function verifyToken(req, res, next) {
@@ -6,13 +6,13 @@ export function verifyToken(req, res, next) {
   const token = req.headers.authorization;
 
   if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
   // Verify the token
-  jwt.verify(token, "secretKey", (err, decodedToken) => {
+  jwt.verify(token, 'secretKey', (err, decodedToken) => {
     if (err) {
-      return res.status(403).json({ message: "Invalid token" });
+      return res.status(403).json({ message: 'Invalid token' });
     }
 
     // Token is valid, you can access the decoded payload if needed
@@ -22,15 +22,14 @@ export function verifyToken(req, res, next) {
   });
 }
 
-export function getUserIdFromtoken(req){
-
-  const token = req.header("Authorization");
+export function getUserIdFromtoken(req) {
+  const token = req.header('Authorization');
   if (!token) {
     return undefined;
   }
 
   try {
-    const decoded = jwt.verify(token, "secretKey");
+    const decoded = jwt.verify(token, 'secretKey');
     const userId = decoded.userId;
     return userId;
   } catch (error) {
@@ -39,34 +38,45 @@ export function getUserIdFromtoken(req){
   }
 }
 
-export async function calculateElectricityProduced(product, weatherData, opitionalSolarVal) {
+export async function calculateElectricityProduced(
+  product,
+  weatherData,
+  opitionalSolarVal
+) {
   // Extract relevant information from the product and weather data
-  const { powerPeak, area,inclination  } = product;
-  const data  = weatherData;
+  const { area } = product;
+  const data = weatherData;
 
   // Calculate the total electricity produced for the given product
-    const solarRadiation = data?.solar_rad;
-    const electricityProduced = (inclination * powerPeak * area) * (solarRadiation ?? opitionalSolarVal);
-    return electricityProduced
-  }
+  const solarIrradiance = data?.dni;
+  const unixTimestamp = data?.ts;
+  const dateTs = new Date(unixTimestamp * 1000);
+  // Hours part from the timestamp
+  const hoursTs = dateTs.getHours();
+  const electricityProduced =
+    ((hoursTs ?? opitionalSolarVal) *
+      area *
+      (solarIrradiance ?? opitionalSolarVal)) /
+    1000;
+  return electricityProduced;
+}
 
 export function getRandomNumber() {
-    // Generate a random decimal between 0 and 1
-    var randomDecimal = Math.random();
-  
-    // Scale the random decimal to the range 1-10 (inclusive)
-    var randomNumber = Math.floor(randomDecimal * 10) + 1;
-  
-    return randomNumber;
-  }
+  // Generate a random decimal between 0 and 1
+  var randomDecimal = Math.random();
 
-  
-  export function convertToDoubleDigit(number) {
-    if (number < 10) {
-      return "0" + number;
-    } else {
-      return number.toString();
-    }
+  // Scale the random decimal to the range 1-10 (inclusive)
+  var randomNumber = Math.floor(randomDecimal * 10) + 1;
+
+  return randomNumber;
+}
+
+export function convertToDoubleDigit(number) {
+  if (number < 10) {
+    return '0' + number;
+  } else {
+    return number.toString();
   }
-  export const weathertoken = '2a70c306e8814c639c7a7f34521670aa'
-  export const fromEmail = 'satviksabharwal7@gmail.com'
+}
+export const weathertoken = '2a70c306e8814c639c7a7f34521670aa';
+export const fromEmail = 'satviksabharwal7@gmail.com';
