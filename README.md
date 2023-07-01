@@ -2,7 +2,7 @@
 
 This project is developed as part of my DWT (Database and Web Techniques) subject project at Technische Universität Chemnitz. The Photovoltaic System is a full-stack application built using the MERN stack, which includes MongoDB, Express.js, React.js, and Node.js. It allows users to monitor and analyze photovoltaic data, visualize system performance, and generate reports.
 
-Features
+<h2>Features</h2>
 <ul>
 <li>User-friendly interface for managing projects, products, and PV details</li>
 <li>Real-time data collection and visualization of photovoltaic system parameters</li>
