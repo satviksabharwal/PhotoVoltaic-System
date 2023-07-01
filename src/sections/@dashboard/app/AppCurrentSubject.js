@@ -1,10 +1,10 @@
-import PropTypes from 'prop-types';
-import ReactApexChart from 'react-apexcharts';
+import PropTypes from "prop-types";
+import ReactApexChart from "react-apexcharts";
 // @mui
-import { styled } from '@mui/material/styles';
-import { Card, CardHeader } from '@mui/material';
+import { styled } from "@mui/material/styles";
+import { Card, CardHeader } from "@mui/material";
 // components
-import { useChart } from '../../../components/chart';
+import { useChart } from "../../../components/chart";
 
 // ----------------------------------------------------------------------
 
@@ -12,19 +12,19 @@ const CHART_HEIGHT = 392;
 
 const LEGEND_HEIGHT = 72;
 
-const StyledChartWrapper = styled('div')(({ theme }) => ({
+const StyledChartWrapper = styled("div")(({ theme }) => ({
   height: CHART_HEIGHT,
   marginTop: theme.spacing(2),
-  '& .apexcharts-canvas svg': {
+  "& .apexcharts-canvas svg": {
     height: CHART_HEIGHT,
   },
-  '& .apexcharts-canvas svg,.apexcharts-canvas foreignObject': {
-    overflow: 'visible',
+  "& .apexcharts-canvas svg,.apexcharts-canvas foreignObject": {
+    overflow: "visible",
   },
-  '& .apexcharts-legend': {
+  "& .apexcharts-legend": {
     height: LEGEND_HEIGHT,
-    alignContent: 'center',
-    position: 'relative !important',
+    alignContent: "center",
+    position: "relative !important",
     borderTop: `solid 1px ${theme.palette.divider}`,
     top: `calc(${CHART_HEIGHT - LEGEND_HEIGHT}px) !important`,
   },
@@ -44,7 +44,7 @@ export default function AppCurrentSubject({ title, subheader, chartData, chartCo
   const chartOptions = useChart({
     stroke: { width: 2 },
     fill: { opacity: 0.48 },
-    legend: { floating: true, horizontalAlign: 'center' },
+    legend: { floating: true, horizontalAlign: "center" },
     xaxis: {
       categories: chartLabels,
       labels: {

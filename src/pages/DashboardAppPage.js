@@ -4,25 +4,16 @@ import { useSelector } from "react-redux";
 import { Helmet } from "react-helmet-async";
 import { toast } from "react-toastify";
 import axios from "axios";
-// @mui
-import { useTheme } from "@mui/material/styles";
 import { Grid, Container, Typography } from "@mui/material";
 // selector
 import { selectCurrentUser } from "../store/user/user.selector";
 // sections
-import {
-  AppCurrentVisits,
-  AppWebsiteVisits,
-  AppWidgetSummary,
-  AppCurrentSubject,
-  AppConversionRates,
-} from "../sections/@dashboard/app";
+import { AppWebsiteVisits, AppWidgetSummary, AppConversionRates } from "../sections/@dashboard/app";
 import VisualMap from "./VisualMap";
 
 // ----------------------------------------------------------------------
 
 export default function DashboardAppPage() {
-  const theme = useTheme();
   const navigate = useNavigate();
   const currentUser = useSelector(selectCurrentUser);
   const [projectData, setProjectData] = useState();
