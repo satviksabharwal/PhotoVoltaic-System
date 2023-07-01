@@ -219,18 +219,6 @@ const ProductTableContainer = (props) => {
                 defaultValue={editData.name}
                 onChange={handleChange}
               />
-              {/* 
-              <TextField
-                name="powerPeak"
-                label="Power Peak"
-                type={"number"}
-                required
-                id="outlined-basic"
-                variant="outlined"
-                fullWidth
-                defaultValue={editData.powerPeak}
-                onChange={handleChange}
-              /> */}
               <TextField
                 name="orientation"
                 label="Orientation(N/E/S/W)"

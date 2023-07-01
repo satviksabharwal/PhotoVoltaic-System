@@ -1,7 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-// import { useNavigate } from "react-router-dom";
 // @mui
 import { Box, Button, Container, Modal, TextField, Typography } from "@mui/material";
 // components
@@ -31,7 +30,6 @@ export default function ProjectPage() {
   const [formField, setFormField] = useState("");
   const [projectData, setProjectData] = useState([{}]);
   const currentUser = useSelector(selectCurrentUser);
-  // const navigate = useNavigate();
   const handleOpen = () => {
     setOpen(true);
   };

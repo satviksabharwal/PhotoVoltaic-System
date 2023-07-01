@@ -137,18 +137,6 @@ export default function DashboardAppPage() {
                     fill: "solid",
                     data: productLength,
                   },
-                  // {
-                  //   name: "Team B",
-                  //   type: "area",
-                  //   fill: "gradient",
-                  //   data: [44, 55, 41, 67, 22],
-                  // },
-                  // {
-                  //   name: "Team C",
-                  //   type: "line",
-                  //   fill: "solid",
-                  //   data: [30, 25, 36, 30],
-                  // },
                 ]}
               />
             </Grid>
@@ -162,23 +150,6 @@ export default function DashboardAppPage() {
               />
             </Grid>
           )}
-          {/* <Grid item xs={12} md={6} lg={4}>
-            <AppCurrentVisits
-              title="Current Visits"
-              chartData={[
-                { label: "America", value: 4344 },
-                { label: "Asia", value: 5435 },
-                { label: "Europe", value: 1443 },
-                { label: "Africa", value: 4443 },
-              ]}
-              chartColors={[
-                theme.palette.primary.main,
-                theme.palette.info.main,
-                theme.palette.warning.main,
-                theme.palette.error.main,
-              ]}
-            />
-          </Grid> */}
           <Grid item xs={12} md={6} lg={6}>
             {chartData?.length > 0 ? (
               <AppConversionRates title="PV Value Statistics" subheader="" chartData={chartData} />
@@ -190,18 +161,6 @@ export default function DashboardAppPage() {
               />
             )}
           </Grid>
-          {/* <Grid item xs={12} md={6} lg={4}>
-            <AppCurrentSubject
-              title="Current Subject"
-              chartLabels={["English", "History", "Physics", "Geography", "Chinese", "Math"]}
-              chartData={[
-                { name: "Series 1", data: [80, 50, 30, 40, 100, 20] },
-                { name: "Series 2", data: [20, 30, 40, 80, 20, 80] },
-                { name: "Series 3", data: [44, 76, 78, 13, 43, 10] },
-              ]}
-              chartColors={[...Array(6)].map(() => theme.palette.text.secondary)}
-            />
-          </Grid> */}
         </Grid>
       </Container>
     </>

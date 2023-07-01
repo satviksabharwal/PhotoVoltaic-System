@@ -394,18 +394,6 @@ const ProductPage = () => {
                   fullWidth
                   onChange={handleChange}
                 />
-
-                {/* <TextField
-                  key={formSubmitted ? "powerPeak-reset" : "powerPeak"}
-                  name="powerPeak"
-                  label="Power Peak"
-                  type={"number"}
-                  required
-                  id="outlined-basic"
-                  variant="outlined"
-                  fullWidth
-                  onChange={handleChange}
-                /> */}
                 <TextField
                   key={formSubmitted ? "orientation-reset" : "orientation"}
                   name="orientation"
