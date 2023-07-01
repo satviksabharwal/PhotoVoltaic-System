@@ -6,7 +6,8 @@ export const projectSchema = new mongoose.Schema(
     id: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    isReportGeneratd: {type: Boolean}
+    isReportGeneratd: {type: Boolean},
+    createdDate: {type : Date}
   },
   {
     versionKey: false,

@@ -504,10 +504,18 @@
             "name": "projectId",
             "in": "query",
             "description": "ProjectId to get projects",
-            "required": true,
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "description": "productId to get projects",
+            "required": false,
             "type": "string"
           }
         ],
+        
         "responses": {
           "200": {
             "description": "Successful operation"
