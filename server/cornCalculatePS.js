@@ -62,41 +62,58 @@ export const executeCorn = () => {
           const filteredData = await weatherResponse?.data?.data?.filter(
             (weather) => weather?.datetime === dateWithHours
           );
-          if(filteredData?.length){
-            const { powerPeak, area,inclination  } = productData
-            const opitionalSolarVal = getRandomNumber()
-            const pvValue = await calculateElectricityProduced(productData, filteredData[0], opitionalSolarVal);
+          if (filteredData?.length) {
+            const { area, inclination } = productData;
+            const opitionalSolarVal = getRandomNumber();
+            const pvValue = await calculateElectricityProduced(
+              productData,
+              filteredData[0],
+              opitionalSolarVal
+            );
+            const unixTimestamp = filteredData[0]?.ts;
+            const dateTs = new Date(unixTimestamp * 1000);
+            // Hours part from the timestamp
+            const hoursTs = dateTs.getHours();
+            const powerPeak = (pvValue * 1000) / (hoursTs ?? opitionalSolarVal);
             const finalObj = {
               dateAndTime: dateWithHours,
               pvValue: pvValue,
               powerPeak: powerPeak,
               area: area,
               inclination: inclination,
-              solarRad: filteredData[0]?.solar_rad ?? opitionalSolarVal
-            }
-            if(pvData) {
+              solarRad: filteredData[0]?.dni ?? opitionalSolarVal,
+            };
+            if (pvData) {
               //Update
-              productPayload.hourWiseData = [...pvData.hourWiseData]
-              const filteredInPvdetails = pvData.hourWiseData.filter(pv => pv.dateAndTime === dateWithHours)
-              if(filteredInPvdetails.length){
-                console.log("Data already updated")
-                return
+              productPayload.hourWiseData = [...pvData.hourWiseData];
+              const filteredInPvdetails = pvData.hourWiseData.filter(
+                (pv) => pv.dateAndTime === dateWithHours
+              );
+              if (filteredInPvdetails.length) {
+                console.log('Data already updated');
+                return;
               }
-              productPayload.hourWiseData.push(finalObj)
-              const res = await PvDetails.updateOne({ id : pvData.id }, { $set: { hourWiseData : productPayload.hourWiseData } })
+              productPayload.hourWiseData.push(finalObj);
+              const res = await PvDetails.updateOne(
+                { id: pvData.id },
+                { $set: { hourWiseData: productPayload.hourWiseData } }
+              );
               if (res.n === 0) {
-                console.log("calculation completed for the hour and it's updated")
+                console.log(
+                  "calculation completed for the hour and it's updated"
+                );
               }
             } else {
               //Create
-              await productPayload.hourWiseData.push(finalObj)
+              await productPayload.hourWiseData.push(finalObj);
               const pvDetailData = new PvDetails(productPayload);
               const res = await pvDetailData.save();
               if (res) {
-                console.log("calculation completed for the hour and it's created")
+                console.log(
+                  "calculation completed for the hour and it's created"
+                );
               }
             }
-
           }
         });
       } catch (err) {

@@ -30,7 +30,6 @@ const defaultFormFields = {
   latitude: "",
   longitude: "",
   productName: "",
-  powerPeak: "",
   orientation: "",
   inclination: "",
   area: "",
@@ -153,7 +152,7 @@ const ProductPage = () => {
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
+      const { latitude, longitude, productName, orientation, inclination, area } = formFields;
       await axios
         .post(
           url,
@@ -161,7 +160,6 @@ const ProductPage = () => {
             latitude: +latitude,
             longitude: +longitude,
             name: productName,
-            powerPeak: +powerPeak,
             orientation,
             inclination: +inclination,
             area: +area,
@@ -231,7 +229,7 @@ const ProductPage = () => {
       fetchNewProjectName();
       axios.get(url, config).then(
         (response) => {
-          toast.success(response.data.message);
+          toast.success("Report genrated Successfully", response);
         },
         (error) => {
           toast.error(error.data.message);
@@ -397,7 +395,7 @@ const ProductPage = () => {
                   onChange={handleChange}
                 />
 
-                <TextField
+                {/* <TextField
                   key={formSubmitted ? "powerPeak-reset" : "powerPeak"}
                   name="powerPeak"
                   label="Power Peak"
@@ -407,7 +405,7 @@ const ProductPage = () => {
                   variant="outlined"
                   fullWidth
                   onChange={handleChange}
-                />
+                /> */}
                 <TextField
                   key={formSubmitted ? "orientation-reset" : "orientation"}
                   name="orientation"

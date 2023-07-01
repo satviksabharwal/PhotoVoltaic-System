@@ -43,7 +43,6 @@ const defaultFormFields = {
   latitude: "",
   longitude: "",
   productName: "",
-  powerPeak: "",
   orientation: "",
   inclination: "",
   area: "",
@@ -83,7 +82,7 @@ const ProductTableContainer = (props) => {
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
+      const { latitude, longitude, productName, orientation, inclination, area } = formFields;
       await axios
         .put(
           url,
@@ -91,7 +90,6 @@ const ProductTableContainer = (props) => {
             latitude: +latitude,
             longitude: +longitude,
             name: productName,
-            powerPeak: +powerPeak,
             orientation,
             inclination: +inclination,
             area: +area,
@@ -221,7 +219,7 @@ const ProductTableContainer = (props) => {
                 defaultValue={editData.name}
                 onChange={handleChange}
               />
-
+              {/* 
               <TextField
                 name="powerPeak"
                 label="Power Peak"
@@ -232,7 +230,7 @@ const ProductTableContainer = (props) => {
                 fullWidth
                 defaultValue={editData.powerPeak}
                 onChange={handleChange}
-              />
+              /> */}
               <TextField
                 name="orientation"
                 label="Orientation(N/E/S/W)"
@@ -329,7 +327,6 @@ const ProductTableContainer = (props) => {
                                 latitude: data?.latitude,
                                 longitude: data?.longitude,
                                 name: data?.name,
-                                powerPeak: data?.powerPeak,
                                 orientation: data?.orientation,
                                 inclination: data?.inclination,
                                 area: data?.area,
@@ -338,7 +335,6 @@ const ProductTableContainer = (props) => {
                                 latitude: data?.latitude,
                                 longitude: data?.longitude,
                                 name: data?.name,
-                                powerPeak: data?.powerPeak,
                                 orientation: data?.orientation,
                                 inclination: data?.inclination,
                                 area: data?.area,
