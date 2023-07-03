@@ -277,14 +277,8 @@ const ProductTableContainer = (props) => {
               <StyledTableCell align="right">Inclination</StyledTableCell>
               <StyledTableCell align="right">Area</StyledTableCell>
               <StyledTableCell align="right">PV Value</StyledTableCell>
-              {reportGenerated ? (
-                <></>
-              ) : (
-                <>
-                  <StyledTableCell align="right">Edit</StyledTableCell>
-                  <StyledTableCell align="right">Delete</StyledTableCell>
-                </>
-              )}
+              <StyledTableCell align="right">Edit</StyledTableCell>
+              <StyledTableCell align="right">Delete</StyledTableCell>
               <StyledTableCell align="center">Data Visualisation</StyledTableCell>
             </TableRow>
           </TableHead>
@@ -302,56 +296,80 @@ const ProductTableContainer = (props) => {
                   <StyledTableCell align="right">{data?.inclination}</StyledTableCell>
                   <StyledTableCell align="right">{data?.area}</StyledTableCell>
                   <StyledTableCell align="right">{data?.pvValue}</StyledTableCell>
-                  {reportGenerated ? (
-                    <></>
-                  ) : (
-                    <>
-                      <StyledTableCell align="right" sx={{ m: 0 }}>
-                        <Tooltip title="Click to update Product details.">
-                          <EditIcon
-                            sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
-                            onClick={() => {
-                              setEditData({
-                                latitude: data?.latitude,
-                                longitude: data?.longitude,
-                                name: data?.name,
-                                orientation: data?.orientation,
-                                inclination: data?.inclination,
-                                area: data?.area,
-                              });
-                              setFormFields({
-                                latitude: data?.latitude,
-                                longitude: data?.longitude,
-                                name: data?.name,
-                                orientation: data?.orientation,
-                                inclination: data?.inclination,
-                                area: data?.area,
-                              });
-                              setProductUpdateId(data?.id);
-                              handleOpen();
-                            }}
-                          />
-                        </Tooltip>
-                      </StyledTableCell>
-                      <StyledTableCell align="right" sx={{ m: 0 }}>
-                        <Tooltip title="Click to delete the Product.">
-                          <DeleteIcon
-                            onClick={() => deletehandle(data?.id)}
-                            sx={{ color: "#48B2E3", mt: 1, cursor: "pointer" }}
-                          />
-                        </Tooltip>
-                      </StyledTableCell>
-                    </>
-                  )}
+                  <StyledTableCell align="right" sx={{ m: 0 }}>
+                    <Tooltip
+                      title={`${
+                        data?.isReportGeneratdProduct ?? reportGenerated
+                          ? "Report has alreday been generated."
+                          : "Click to update Product details."
+                      }`}
+                    >
+                      <EditIcon
+                        sx={{
+                          color: `${data?.isReportGeneratdProduct ?? reportGenerated ? "gray" : "#48B2E3"}`,
+                          mt: 1,
+                          cursor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "auto" : "pointer"}`,
+                        }}
+                        onClick={() => {
+                          if (!data?.isReportGeneratdProduct ?? !reportGenerated) {
+                            setEditData({
+                              latitude: data?.latitude,
+                              longitude: data?.longitude,
+                              name: data?.name,
+                              orientation: data?.orientation,
+                              inclination: data?.inclination,
+                              area: data?.area,
+                            });
+                            setFormFields({
+                              latitude: data?.latitude,
+                              longitude: data?.longitude,
+                              name: data?.name,
+                              orientation: data?.orientation,
+                              inclination: data?.inclination,
+                              area: data?.area,
+                            });
+                            setProductUpdateId(data?.id);
+                            handleOpen();
+                          }
+                        }}
+                      />
+                    </Tooltip>
+                  </StyledTableCell>
+                  <StyledTableCell align="right" sx={{ m: 0 }}>
+                    <Tooltip
+                      title={`${
+                        data?.isReportGeneratdProduct ?? reportGenerated
+                          ? "Report has alreday been generated."
+                          : "Click to delete the Product."
+                      }`}
+                    >
+                      <DeleteIcon
+                        onClick={() => deletehandle(data?.id)}
+                        sx={{
+                          mt: 1,
+                          cursor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "auto" : "pointer"}`,
+                          color: `${data?.isReportGeneratdProduct ?? reportGenerated ? "gray" : "#48B2E3"}`,
+                        }}
+                      />
+                    </Tooltip>
+                  </StyledTableCell>
                   <StyledTableCell
                     align="center"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => productVisualizationHandle(data?.id, data?.name)}
+                    style={{ cursor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "auto" : "pointer"}` }}
+                    onClick={() =>
+                      data?.isReportGeneratdProduct ?? reportGenerated
+                        ? ""
+                        : productVisualizationHandle(data?.id, data?.name)
+                    }
                   >
                     <Fab
                       variant="extended"
                       size="small"
-                      style={{ backgroundColor: "#48B2E3", color: "#fff" }}
+                      style={{
+                        backgroundColor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "gray" : "#48B2E3"}`,
+                        color: "#fff",
+                        cursor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "auto" : "pointer"}`,
+                      }}
                       aria-label="add"
                     >
                       <span style={{ marginLeft: "1px" }}>Open</span>

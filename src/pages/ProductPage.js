@@ -49,7 +49,6 @@ const ProductPage = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
   const navigate = useNavigate();
-
   const handleOpen = () => {
     setOpen(true);
   };
@@ -133,7 +132,7 @@ const ProductPage = () => {
         (response) => {
           toast.success(response.data.message);
           resetFormFieldsModal();
-          fetchNewProjectName(event);
+          fetchNewProjectName();
           setOpen(false);
         },
         (error) => {
@@ -226,10 +225,11 @@ const ProductPage = () => {
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      fetchNewProjectName();
       axios.get(url, config).then(
         (response) => {
           toast.success("Report genrated Successfully", response);
+          fetchNewProjectName();
+          setReportGenerated(true);
         },
         (error) => {
           toast.error(error.data.message);
@@ -290,32 +290,34 @@ const ProductPage = () => {
             </Button>
           </div>
         </div>
-        <div style={{ marginBottom: "50px", display: "flex" }}>
-          {reportGenerated ? (
-            <MapContainer
-              center={[50.8282, 12.9209]}
-              zoom={7}
-              scrollWheelZoom={false}
-              style={{
-                maxHeight: "500px",
-                marginLeft: "0px",
-                marginRight: "0px",
-                flex: "1",
-              }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {productData?.map((product) => (
-                <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
-                  <Popup>
-                    <h3 style={{ textAlign: "center" }}>{product.name}</h3>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          ) : (
+        {reportGenerated ? (
+          <MapContainer
+            center={[50.8282, 12.9209]}
+            zoom={7}
+            scrollWheelZoom={false}
+            style={{
+              maxHeight: "500px",
+              marginLeft: "0px",
+              marginRight: "0px",
+              marginBottom: "50px",
+              width: "100%",
+              flex: "1",
+            }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {productData?.map((product) => (
+              <Marker position={[product?.latitude, product?.longitude]} key={product?.id}>
+                <Popup>
+                  <h3 style={{ textAlign: "center" }}>{product.name}</h3>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        ) : (
+          <div style={{ marginBottom: "50px", display: "flex" }}>
             <MapContainer
               center={[50.8282, 12.9209]}
               zoom={7}
@@ -347,11 +349,6 @@ const ProductPage = () => {
               />
               <MapEvents handleMapDoubleClick={handleMapDoubleClick} />
             </MapContainer>
-          )}
-
-          {reportGenerated ? (
-            <></>
-          ) : (
             <form
               onSubmit={handleCreateProduct}
               style={{ marginRight: "0px", marginLeft: "auto", width: "100%", flex: "0.3" }}
@@ -438,8 +435,9 @@ const ProductPage = () => {
                 Submit
               </LoadingButton>
             </form>
-          )}
-        </div>
+          </div>
+        )}
+
         {buttonType === "edit" ? (
           <Modal
             open={open}

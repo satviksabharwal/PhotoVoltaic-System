@@ -93,7 +93,11 @@ export default function AccountPopover() {
           <Typography variant="subtitle2" noWrap>
             {currentUser && currentUser.displayName}
           </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary" }} noWrap>
+          <Typography
+            variant="body2"
+            sx={{ color: "text.secondary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            noWrap
+          >
             {currentUser && currentUser?.email}
           </Typography>
         </Box>
