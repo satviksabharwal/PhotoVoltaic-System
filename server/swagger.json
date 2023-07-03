@@ -610,9 +610,6 @@
         "name": {
           "type": "string"
         },
-        "powerPeak": {
-          "type": "number"
-        },
         "orientation": {
           "type": "string",
           "enum": ["N", "E", "S", "W"]
@@ -635,7 +632,6 @@
       },
       "required": [
         "name",
-        "powerPeak",
         "orientation",
         "inclination",
         "area",
@@ -649,9 +645,6 @@
       "properties": {
         "name": {
           "type": "string"
-        },
-        "powerPeak": {
-          "type": "number"
         },
         "orientation": {
           "type": "string",
@@ -672,7 +665,6 @@
       },
       "required": [
         "name",
-        "powerPeak",
         "orientation",
         "inclination",
         "area",

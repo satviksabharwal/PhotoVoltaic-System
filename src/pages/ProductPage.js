@@ -30,7 +30,6 @@ const defaultFormFields = {
   latitude: "",
   longitude: "",
   productName: "",
-  powerPeak: "",
   orientation: "",
   inclination: "",
   area: "",
@@ -153,7 +152,7 @@ const ProductPage = () => {
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      const { latitude, longitude, productName, powerPeak, orientation, inclination, area } = formFields;
+      const { latitude, longitude, productName, orientation, inclination, area } = formFields;
       await axios
         .post(
           url,
@@ -161,7 +160,6 @@ const ProductPage = () => {
             latitude: +latitude,
             longitude: +longitude,
             name: productName,
-            powerPeak: +powerPeak,
             orientation,
             inclination: +inclination,
             area: +area,
@@ -231,7 +229,7 @@ const ProductPage = () => {
       fetchNewProjectName();
       axios.get(url, config).then(
         (response) => {
-          toast.success(response.data.message);
+          toast.success("Report genrated Successfully", response);
         },
         (error) => {
           toast.error(error.data.message);
@@ -299,7 +297,7 @@ const ProductPage = () => {
               zoom={7}
               scrollWheelZoom={false}
               style={{
-                maxHeight: "560px",
+                maxHeight: "500px",
                 marginLeft: "0px",
                 marginRight: "0px",
                 flex: "1",
@@ -323,7 +321,7 @@ const ProductPage = () => {
               zoom={7}
               scrollWheelZoom={false}
               style={{
-                maxHeight: "560px",
+                maxHeight: "500px",
                 marginLeft: "0px",
                 marginRight: "30px",
                 flex: "0.7",
@@ -390,18 +388,6 @@ const ProductPage = () => {
                   name="productName"
                   label="Product Name"
                   type={"text"}
-                  required
-                  id="outlined-basic"
-                  variant="outlined"
-                  fullWidth
-                  onChange={handleChange}
-                />
-
-                <TextField
-                  key={formSubmitted ? "powerPeak-reset" : "powerPeak"}
-                  name="powerPeak"
-                  label="Power Peak"
-                  type={"number"}
                   required
                   id="outlined-basic"
                   variant="outlined"
