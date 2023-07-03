@@ -13,6 +13,7 @@ export const productSchema = new mongoose.Schema(
     project: { type: String, ref: 'Project', required: true },
     powerPeak: { type: Number },
     pvValue: { type: Number },
+    isReportGeneratdProduct: { type: Boolean },
   },
   {
     versionKey: false,

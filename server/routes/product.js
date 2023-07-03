@@ -128,6 +128,24 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+// Get Individual Product API
+router.get('/item', verifyToken, async (req, res) => {
+  try {
+    // Retrieve all Products from the database
+    const user = getUserIdFromtoken(req);
+    const product = req.query.productId;
+    console.log(product);
+    let products;
+    if (product) {
+      products = await Product.findOne({ user, id: product });
+    }
+    res.json(products);
+  } catch (error) {
+    console.error('Error in getting a Product API:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Update Product API
 router.put('/update/:id', verifyToken, async (req, res) => {
   try {
