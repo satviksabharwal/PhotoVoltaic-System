@@ -40,7 +40,16 @@ export async function generateAndSendPDF(data, email, projectDetails) {
     host: 'localhost',
     port: 1025,
     ignoreTLS: true,
+    
   });
+
+  // const transporter = nodemailer.createTransport({
+  //   service: 'gmail',
+  //   auth: {
+  //     user: 'muruganvenkatesan55@gmail.com',
+  //     pass: 'Murugan@301998'
+  //   }
+  // });
 
   const mailOptions = {
     from: fromEmail,
