@@ -1,40 +1,19 @@
-## Minimal [(Free version)](https://minimal-kit-react.vercel.app/)
+<h1>University Project - MERN Stack Photovoltaic System</h1>
 
-![license](https://img.shields.io/badge/license-MIT-blue.svg)
+This project is developed as part of my DWT (Database and Web Techniques) subject project at Technische Universität Chemnitz. The Photovoltaic System is a full-stack application built using the MERN stack, which includes MongoDB, Express.js, React.js, and Node.js. It allows users to monitor and analyze photovoltaic data, visualize system performance, and generate reports.
 
-> Free React Admin Dashboard made with Material-UI components and React.
+<h2>Features</h2>
+<ul>
+<li>User-friendly interface for managing projects, products, and PV details</li>
+<li>Real-time data collection and visualization of photovoltaic system parameters</li>
+<li>Report generation with a graphical representation of system performance</li>
+<li>Secure password storage using encryption techniques</li>
+<li>Dynamic rendering to support various device screens, including mobile phones, tablets, and laptops</li>
+</ul>
 
-![preview](public/assets/preview.jpg)
-
-| [Minimal Free](https://minimal-kit-react.vercel.app/) | [Minimal](https://material-ui.com/store/items/minimal-dashboard/) |
-| ----------------------------------------------------- | :---------------------------------------------------------------- |
-| **6** Demo pages                                      | **50+** demo pages                                                |
-| -                                                     | ✓ Multi-language                                                  |
-| -                                                     | ✓ Dark/Light Mode 🌓                                              |
-| -                                                     | ✓ [More components](https://minimals.cc/components)               |
-| -                                                     | ✓ Next.js version                                                 |
-| -                                                     | ✓ TypeScript version                                              |
-| -                                                     | ✓ Design files (Figma & Sketch)                                   |
-
-## Page demo
-
-- [Dashboard](https://minimal-kit-react.vercel.app/dashboard/app)
-- [Users](https://minimal-kit-react.vercel.app/dashboard/user)
-- [Product](https://minimal-kit-react.vercel.app/dashboard/products)
-- [Blog](https://minimal-kit-react.vercel.app/dashboard/blog)
-- [Login](https://minimal-kit-react.vercel.app/login)
-- [Not Found](https://minimal-kit-react.vercel.app/404)
-
-## Getting started
-
-- Recommended `node js 16.x` and `npm 6+`. (suggestion v16.15.0)
-- Install dependencies: `npm install` / `yarn install`
-- Start the project: `npm run start` / `yarn start`
-
-## License
-
-Distributed under the MIT License. See [LICENSE](https://github.com/minimal-ui-kit/minimal.free/blob/main/LICENSE.md) for more information.
-
-## Contact us
-
-Email Us: support@minimals.cc
+<h2>Getting Started:</h2>
+<ul>
+  <li>Every project file, including the database setup file, is present in this project.</li>
+  <li>Install the dependencies. Run <strong>npm install</strong> inside the root directory and /server directory.</li>
+  <li>Finally, use the command <strong>npm start</strong> inside the root directory to run the app! Both frontend and backend will run parallely.</li>
+</ul>

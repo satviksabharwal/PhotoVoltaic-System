@@ -9,7 +9,7 @@ import {
 } from '../commonFunctions.js';
 import { Product, Project } from '../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import axios from "axios";
+import axios from 'axios';
 
 const router = express.Router();
 
@@ -19,7 +19,6 @@ router.post('/create', verifyToken, async (req, res) => {
     // Extract the product data from the request body
     const {
       name,
-      powerPeak,
       orientation,
       inclination,
       area,
@@ -44,7 +43,6 @@ router.post('/create', verifyToken, async (req, res) => {
     const rawProduct = {
       id,
       name,
-      powerPeak,
       orientation,
       inclination,
       area,
@@ -60,7 +58,9 @@ router.post('/create', verifyToken, async (req, res) => {
     const endDate = `${currentdate.getFullYear()}-${convertToDoubleDigit(
       currentdate.getMonth() + 1
     )}-${convertToDoubleDigit(currentdate.getDate() + 1)}`;
-    const dateWithHours = `${fromDate}:${convertToDoubleDigit(currentdate.getHours())}`
+    const dateWithHours = `${fromDate}:${convertToDoubleDigit(
+      currentdate.getHours()
+    )}`;
     const weatherResponse = await axios.get(
       'https://api.weatherbit.io/v2.0/history/hourly',
       {
@@ -82,6 +82,7 @@ router.post('/create', verifyToken, async (req, res) => {
       (weather) => weather?.datetime === dateWithHours
     );
     let pvValue;
+    let powerPeak;
     if (filteredData?.length) {
       const opitionalSolarVal = getRandomNumber();
       pvValue = await calculateElectricityProduced(
@@ -89,9 +90,14 @@ router.post('/create', verifyToken, async (req, res) => {
         filteredData[0],
         opitionalSolarVal
       );
+      const unixTimestamp = filteredData[0]?.ts;
+      const dateTs = new Date(unixTimestamp * 1000);
+      // Hours part from the timestamp
+      const hoursTs = dateTs.getHours();
+      powerPeak = (pvValue * 1000) / hoursTs;
     }
     // Create a new product instance
-    const product = new Product({...rawProduct, pvValue});
+    const product = new Product({ ...rawProduct, pvValue, powerPeak });
 
     // Save the product to the database
     await product.save();
@@ -129,15 +135,8 @@ router.put('/update/:id', verifyToken, async (req, res) => {
     const { id } = req.params;
 
     // Extract updated Product details from the request body
-    const {
-      name,
-      powerPeak,
-      orientation,
-      inclination,
-      area,
-      longitude,
-      latitude,
-    } = req.body;
+    const { name, orientation, inclination, area, longitude, latitude } =
+      req.body;
 
     const user = getUserIdFromtoken(req);
 
@@ -160,7 +159,6 @@ router.put('/update/:id', verifyToken, async (req, res) => {
       {
         $set: {
           name,
-          powerPeak,
           orientation,
           inclination,
           area,

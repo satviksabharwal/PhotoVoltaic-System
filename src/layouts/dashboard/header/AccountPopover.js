@@ -11,8 +11,6 @@ import { setCurrentUserAction } from "../../../store/user/user.action";
 import { selectCurrentUser } from "../../../store/user/user.selector";
 import account from "../../../_mock/account";
 
-// ----------------------------------------------------------------------
-
 const MENU_OPTIONS = [
   {
     label: "Home",
@@ -23,8 +21,6 @@ const MENU_OPTIONS = [
     icon: "eva:settings-2-fill",
   },
 ];
-
-// ----------------------------------------------------------------------
 
 export default function AccountPopover() {
   const [open, setOpen] = useState(null);
