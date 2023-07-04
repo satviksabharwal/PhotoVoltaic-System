@@ -276,7 +276,7 @@ const ProductTableContainer = (props) => {
               <StyledTableCell align="right">Orientation</StyledTableCell>
               <StyledTableCell align="right">Inclination</StyledTableCell>
               <StyledTableCell align="right">Area</StyledTableCell>
-              <StyledTableCell align="right">PV Value</StyledTableCell>
+              <StyledTableCell align="right">PV Value (kWh)</StyledTableCell>
               <StyledTableCell align="right">Edit</StyledTableCell>
               <StyledTableCell align="right">Delete</StyledTableCell>
               <StyledTableCell align="center">Data Visualisation</StyledTableCell>
@@ -311,7 +311,9 @@ const ProductTableContainer = (props) => {
                           cursor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "auto" : "pointer"}`,
                         }}
                         onClick={() => {
-                          if (!data?.isReportGeneratdProduct ?? !reportGenerated) {
+                          if (data?.isReportGeneratdProduct ?? reportGenerated) {
+                            console.log("Test");
+                          } else {
                             setEditData({
                               latitude: data?.latitude,
                               longitude: data?.longitude,
@@ -344,7 +346,7 @@ const ProductTableContainer = (props) => {
                       }`}
                     >
                       <DeleteIcon
-                        onClick={() => deletehandle(data?.id)}
+                        onClick={() => (data?.isReportGeneratdProduct ?? reportGenerated ? "" : deletehandle(data?.id))}
                         sx={{
                           mt: 1,
                           cursor: `${data?.isReportGeneratdProduct ?? reportGenerated ? "auto" : "pointer"}`,
