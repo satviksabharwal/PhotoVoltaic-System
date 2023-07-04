@@ -78,5 +78,5 @@ export function convertToDoubleDigit(number) {
     return number.toString();
   }
 }
-export const weathertoken = '2a70c306e8814c639c7a7f34521670aa';
+export const weathertoken = '20920247244143d3992192dfb8ea97c9';
 export const fromEmail = 'satviksabharwal7@gmail.com';

@@ -134,7 +134,6 @@ router.get('/item', verifyToken, async (req, res) => {
     // Retrieve all Products from the database
     const user = getUserIdFromtoken(req);
     const product = req.query.productId;
-    console.log(product);
     let products;
     if (product) {
       products = await Product.findOne({ user, id: product });
