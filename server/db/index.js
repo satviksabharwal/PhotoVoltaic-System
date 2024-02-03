@@ -6,7 +6,7 @@ import { pvDetailsSchema } from "../models/pvDetails.js";
 
 // Connect to MongoDB
 mongoose.connect(
-  "mongodb+srv://satviksabharwal:5cmCTxwHaaKrkutR@cluster0.y2u9jyd.mongodb.net/?retryWrites=true&w=majority",
+  "Insert mongo connection string here",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true,
