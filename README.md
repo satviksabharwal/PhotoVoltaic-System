@@ -11,7 +11,20 @@ This project is developed as part of my DWT (Database and Web Techniques) subjec
 <li>Dynamic rendering to support various device screens, including mobile phones, tablets, and laptops</li>
 </ul>
 
-<h2>Getting Started:</h2>
+## Configuration
+
+You'll need to paste your MONGODB_URI and WEATHER_API_TOKEN, as I used Weatherbit to fetch weather data. Alternatively, create a .env file inside the server folder with the following environment variables:
+
+```bash
+MONGODB_URI="your_mongo_db_uri"
+WEATHER_API_TOKEN = "your_weather_API_token"
+WEATHER_API_TOKEN_REGISTERED_EMAIL_ID = "your_email_id_used_for_weather_token" (Required to use API from Weatherbit)
+```
+
+You'll then need to make sure that these environment variables are referenced in your code and loaded correctly.
+
+## Usage
+
 <ul>
   <li>Every project file, including the database setup file, is present in this project.</li>
   <li>Install the dependencies. Run <strong>npm install</strong> inside the root directory and /server directory.</li>
