@@ -143,7 +143,7 @@ const ProductVisualization = () => {
         <Grid container spacing={3}>
           <Grid item xs={12} md={6} lg={6}>
             <AppWebsiteVisits
-              title="Power Peak Every Hour"
+              title="Power Peak every hour"
               subheader=""
               chartLabels={dateTime}
               chartData={[

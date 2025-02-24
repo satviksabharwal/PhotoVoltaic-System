@@ -1,4 +1,11 @@
 import jwt from 'jsonwebtoken';
+import 'dotenv/config';
+
+const { WEATHER_API_TOKEN, WEATHER_API_TOKEN_REGISTERED_EMAIL_ID } =
+  process.env;
+
+export const weathertoken = WEATHER_API_TOKEN;
+export const fromEmail = WEATHER_API_TOKEN_REGISTERED_EMAIL_ID;
 
 // Token verification middleware
 export function verifyToken(req, res, next) {
@@ -78,5 +85,3 @@ export function convertToDoubleDigit(number) {
     return number.toString();
   }
 }
-export const weathertoken = '20920247244143d3992192dfb8ea97c9';
-export const fromEmail = 'satviksabharwal7@gmail.com';
