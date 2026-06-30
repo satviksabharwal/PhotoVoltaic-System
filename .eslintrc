@@ -76,5 +76,36 @@
         "array": false
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "ecmaVersion": 2021,
+        "sourceType": "module",
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "plugins": ["@typescript-eslint"],
+      "rules": {
+        "no-undef": "off",
+        "no-shadow": "off",
+        "no-unused-vars": "off",
+        "no-use-before-define": "off",
+        "@typescript-eslint/no-unused-vars": [
+          1,
+          {
+            "ignoreRestSiblings": false,
+            "argsIgnorePattern": "^_"
+          }
+        ],
+        "import/no-duplicates": 1,
+        "import/extensions": "off",
+        "import/no-unresolved": "off",
+        "no-redeclare": "off"
+      }
+    }
+  ]
 }
