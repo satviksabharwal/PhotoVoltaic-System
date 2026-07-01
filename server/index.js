@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
@@ -12,9 +13,19 @@ const rawData = fs.readFileSync('./swagger.json');
 
 const swaggerDocument = JSON.parse(rawData);
 
+// Port comes from the environment (hosting providers inject `PORT`); falls back
+// to 5500 for local development.
+const PORT = process.env.PORT || 5500;
+
+// Comma-separated list of allowed origins (e.g. "https://app.example.com").
+// When unset, CORS stays open — convenient for local dev.
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+  : undefined;
+
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: allowedOrigins || true }));
 
 app.use('/api/user', userRoutes);
 
@@ -44,8 +55,8 @@ app.get('/api/protected', (req, res) => {
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Start the server
-app.listen(5500, () => {
-  console.log('Server started on http://localhost:5500');
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });
 
 executeCorn();

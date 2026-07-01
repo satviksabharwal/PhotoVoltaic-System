@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { Grid, Container, Typography } from '@mui/material';
+import api from '../utils/api';
 // selector
 import { selectCurrentUser } from '../store/user/user.selector';
 // sections
@@ -29,22 +29,22 @@ export default function DashboardAppPage() {
 
   const fetchProjectApiCall = () => {
     try {
-      const url = 'http://localhost:5500/api/project';
+      const url = '/project';
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get<Project[]>(url, config).then(
+      api.get<Project[]>(url, config).then(
         (response) => {
           setProjectName([]);
           setProductLength([]);
           setProjectData(response.data);
           response.data.map((projData) => {
             try {
-              const productUrl = `http://localhost:5500/api/product?projectId=${projData?.id}`;
+              const productUrl = `/product?projectId=${projData?.id}`;
               const productConfig = {
                 headers: { Authorization: currentUser?.tokenId },
               };
-              axios.get<Product[]>(productUrl, productConfig).then(
+              api.get<Product[]>(productUrl, productConfig).then(
                 (productResponse) => {
                   setProjectName((prevProjectName) => [...prevProjectName, projData?.name]);
                   setProductLength((prevProductLength) => [...prevProductLength, productResponse.data.length]);
@@ -70,11 +70,11 @@ export default function DashboardAppPage() {
 
   const getAllProductData = () => {
     try {
-      const url = `http://localhost:5500/api/product`;
+      const url = `/product`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get<Product[]>(url, config).then(
+      api.get<Product[]>(url, config).then(
         (response) => {
           setProductData(response.data);
         },

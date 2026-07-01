@@ -4,11 +4,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Checkbox, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Iconify from '../../../../components/iconify';
+import api from '../../../../utils/api';
 import { setCurrentUserAction } from '../../../../store/user/user.action';
 import { selectCurrentUser } from '../../../../store/user/user.selector';
 import { AppDispatch } from '../../../../store/store';
@@ -62,10 +63,10 @@ const UpdatePassword = () => {
       toast.error('New and Confirm Password do not match.');
     } else {
       try {
-        const url = `http://localhost:5500/api/user/change-password`;
+        const url = `/user/change-password`;
         const email = currentUser?.email;
         const { oldPassword, newPassword } = formFields;
-        await axios.post<UpdatePasswordResponse>(url, { email, oldPassword, newPassword }).then(
+        await api.post<UpdatePasswordResponse>(url, { email, oldPassword, newPassword }).then(
           (response: AxiosResponse<UpdatePasswordResponse>) => {
             // localStorage.setItem("token", response);
             toast.success(response.data.message);

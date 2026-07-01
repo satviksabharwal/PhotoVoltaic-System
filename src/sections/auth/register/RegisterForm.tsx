@@ -5,7 +5,8 @@ import { Link, Stack, IconButton, InputAdornment, TextField, Checkbox, Typograph
 import { LoadingButton } from '@mui/lab';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
+import api from '../../../utils/api';
 // components
 import Iconify from '../../../components/iconify';
 
@@ -49,8 +50,8 @@ export default function RegisterForm() {
       toast.error('Password do not match');
     } else {
       try {
-        const url = 'http://localhost:5500/api/user';
-        await axios.post<RegisterResponse>(url, { displayName, email, password }).then(
+        const url = '/user';
+        await api.post<RegisterResponse>(url, { displayName, email, password }).then(
           (response: AxiosResponse<RegisterResponse>) => {
             toast.success(response.data.message);
             resetFormFields();

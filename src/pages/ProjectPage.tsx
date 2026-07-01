@@ -7,8 +7,8 @@ import { SxProps, Theme } from '@mui/material/styles';
 // components
 import { LoadingButton } from '@mui/lab';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { selectCurrentUser } from '../store/user/user.selector';
+import api from '../utils/api';
 import FolderContainer from './FolderContainer';
 import { Project } from '../types/models';
 
@@ -49,11 +49,11 @@ export default function ProjectPage() {
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = 'http://localhost:5500/api/project/create';
+      const url = '/project/create';
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.post(url, { name: formField }, config).then(
+      await api.post(url, { name: formField }, config).then(
         (response) => {
           toast.success(response.data.message);
           resetFormFields();
@@ -71,11 +71,11 @@ export default function ProjectPage() {
 
   const fetchApiCall = () => {
     try {
-      const url = 'http://localhost:5500/api/project';
+      const url = '/project';
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get<Project[]>(url, config).then(
+      api.get<Project[]>(url, config).then(
         (response) => {
           setProjectData(response.data);
         },

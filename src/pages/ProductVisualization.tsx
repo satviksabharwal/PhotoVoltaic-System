@@ -6,9 +6,10 @@ import { useSelector } from "react-redux";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 // @mui
 import { useTheme } from "@mui/material/styles";
-import axios, { AxiosRequestConfig } from "axios";
+import { AxiosRequestConfig } from "axios";
 import { toast } from "react-toastify";
 import { selectCurrentUser } from "../store/user/user.selector";
+import api from "../utils/api";
 import { AppCurrentSubject, AppWebsiteVisits } from "../sections/@dashboard/app";
 import { PvDetails, PvDataPoint } from "../types/models";
 
@@ -54,11 +55,11 @@ const ProductVisualization = () => {
 
   const fetchProductData = () => {
     try {
-      const url = `http://localhost:5500/api/project/getPVData?productId=${params?.productId}`;
+      const url = `/project/getPVData?productId=${params?.productId}`;
       const config: AxiosRequestConfig = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get<PvDetails>(url, config).then(
+      api.get<PvDetails>(url, config).then(
         (response) => {
           setDateTime([]);
           setPowerPeakData([]);
@@ -84,11 +85,11 @@ const ProductVisualization = () => {
 
   const fetchProductReportStatus = () => {
     try {
-      const url = `http://localhost:5500/api/product/item/?productId=${params?.productId}`;
+      const url = `/product/item/?productId=${params?.productId}`;
       const config: AxiosRequestConfig = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get<ProductReportStatusResponse>(url, config).then(
+      api.get<ProductReportStatusResponse>(url, config).then(
         (response) => {
           setReportGenerated(response?.data?.isReportGeneratdProduct ?? false);
         },
@@ -108,11 +109,11 @@ const ProductVisualization = () => {
 
   const generateReportHandle = () => {
     try {
-      const url = `http://localhost:5500/api/project/generateApi/product/${params?.productId}`;
+      const url = `/project/generateApi/product/${params?.productId}`;
       const config: AxiosRequestConfig = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get(url, config).then(
+      api.get(url, config).then(
         () => {
           toast.success("Report genrated Successfully");
           fetchProductData();

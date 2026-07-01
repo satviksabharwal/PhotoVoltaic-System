@@ -19,11 +19,11 @@ import { SxProps, Theme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EqualizerIcon from '@mui/icons-material/Equalizer';
-import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { LoadingButton } from '@mui/lab';
 import { selectCurrentUser } from '../store/user/user.selector';
+import api from '../utils/api';
 import { StyledTableCell, StyledTableRow } from './TableContainer.styled';
 import NoData from './nodata.jpg';
 import { Product } from '../types/models';
@@ -96,12 +96,12 @@ const ProductTableContainer = (props: ProductTableContainerProps) => {
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/product/update/${productUpdateId}`;
+      const url = `/product/update/${productUpdateId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
       const { latitude, longitude, productName, orientation, inclination, area } = formFields;
-      await axios
+      await api
         .put(
           url,
           {
@@ -134,11 +134,11 @@ const ProductTableContainer = (props: ProductTableContainerProps) => {
 
   const getAllProductData = () => {
     try {
-      const url = `http://localhost:5500/api/product?projectId=${params?.projectId}`;
+      const url = `/product?projectId=${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get<Product[]>(url, config).then(
+      api.get<Product[]>(url, config).then(
         (response) => {
           setProductData(response.data);
         },
@@ -153,11 +153,11 @@ const ProductTableContainer = (props: ProductTableContainerProps) => {
 
   const deletehandle = useCallback(async (id: string) => {
     try {
-      const url = `http://localhost:5500/api/product/delete/${id}`;
+      const url = `/product/delete/${id}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.delete(url, config).then(
+      await api.delete(url, config).then(
         (response) => {
           console.log(response);
           toast.success(response.data.message);

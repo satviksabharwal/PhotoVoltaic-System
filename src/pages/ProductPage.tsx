@@ -11,8 +11,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { LoadingButton } from '@mui/lab';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { selectCurrentUser } from '../store/user/user.selector';
+import api from '../utils/api';
 import ProductTableContainer from './ProductTableContainer';
 import { Product, Project } from '../types/models';
 
@@ -98,11 +98,11 @@ const ProductPage = () => {
 
   const fetchNewProjectName = async () => {
     try {
-      const url = `http://localhost:5500/api/project?projectId=${params?.projectId}`;
+      const url = `/project?projectId=${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.get<Project>(url, config).then(
+      await api.get<Project>(url, config).then(
         (response) => {
           setReportGenerated(Boolean(response.data.isReportGeneratd));
           setProjectName(response.data.name);
@@ -119,11 +119,11 @@ const ProductPage = () => {
   const deleteModalHandle = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/project/delete/${params?.projectId}`;
+      const url = `/project/delete/${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.delete(url, config).then(
+      await api.delete(url, config).then(
         (response) => {
           toast.success(response.data.message);
           setOpen(false);
@@ -141,11 +141,11 @@ const ProductPage = () => {
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/project/update/${params?.projectId}`;
+      const url = `/project/update/${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.put(url, { name: formFieldModal }, config).then(
+      await api.put(url, { name: formFieldModal }, config).then(
         (response) => {
           toast.success(response.data.message);
           resetFormFieldsModal();
@@ -164,12 +164,12 @@ const ProductPage = () => {
   const handleCreateProduct = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/product/create`;
+      const url = `/product/create`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
       const { latitude, longitude, productName, orientation, inclination, area } = formFields;
-      await axios
+      await api
         .post(
           url,
           {
@@ -203,12 +203,12 @@ const ProductPage = () => {
 
   const getAllProductLocation = () => {
     try {
-      const url = `http://localhost:5500/api/product?projectId=${params?.projectId}`;
+      const url = `/product?projectId=${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
       fetchNewProjectName();
-      axios.get<Product[]>(url, config).then(
+      api.get<Product[]>(url, config).then(
         (response) => {
           setProductData(response.data);
         },
@@ -239,11 +239,11 @@ const ProductPage = () => {
   const generateReportHandle = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/project/generateApi/${params?.projectId}`;
+      const url = `/project/generateApi/${params?.projectId}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      axios.get(url, config).then(
+      api.get(url, config).then(
         () => {
           toast.success('Report genrated Successfully');
           fetchNewProjectName();

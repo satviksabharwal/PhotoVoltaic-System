@@ -6,11 +6,12 @@ import { Checkbox, Stack, TextField, Typography } from '@mui/material';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 // components
 import { setCurrentUserAction } from '../../../../store/user/user.action';
 import { selectCurrentUser } from '../../../../store/user/user.selector';
 import { AppDispatch } from '../../../../store/store';
+import api from '../../../../utils/api';
 
 // ----------------------------------------------------------------------
 
@@ -51,11 +52,11 @@ const DeleteAccount = () => {
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = `http://localhost:5500/api/user/${currentUser?.email}`;
+      const url = `/user/${currentUser?.email}`;
       const config = {
         headers: { Authorization: currentUser?.tokenId },
       };
-      await axios.delete<DeleteResponse>(url, config).then(
+      await api.delete<DeleteResponse>(url, config).then(
         (response: AxiosResponse<DeleteResponse>) => {
           toast.success(response.data.message);
           dispatch(setCurrentUserAction(null));

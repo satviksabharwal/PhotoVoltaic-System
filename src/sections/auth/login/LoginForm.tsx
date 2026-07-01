@@ -5,10 +5,11 @@ import { Link, Stack, IconButton, InputAdornment, TextField } from '@mui/materia
 import { LoadingButton } from '@mui/lab';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import { useDispatch } from 'react-redux';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { AppDispatch } from '../../../store/store';
+import api from '../../../utils/api';
 // components
 import Iconify from '../../../components/iconify';
 
@@ -50,8 +51,8 @@ export default function LoginForm() {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = 'http://localhost:5500/api/user/login';
-      await axios.post<LoginResponse>(url, { email, password }).then(
+      const url = '/user/login';
+      await api.post<LoginResponse>(url, { email, password }).then(
         (response: AxiosResponse<LoginResponse>) => {
           toast.success('Login Successful!!');
           resetFormFields();

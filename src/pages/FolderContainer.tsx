@@ -13,8 +13,8 @@ const FolderContainer = ({ folderName, folderId, isReportGeneratd }: FolderConta
   const navigate = useNavigate();
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter') {
-      // Perform the same action as the click handler
-      //   console.log("Element clicked!");
+      event.preventDefault();
+      navigate(`/dashboard/projects/${folderId}`, { state: folderName });
     }
   };
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
