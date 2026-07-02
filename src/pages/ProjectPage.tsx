@@ -9,6 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import api from '../utils/api';
 import AuthField, { SubmitButton } from '../sections/auth/AuthField';
 import ProjectCard from '../sections/projects/ProjectCard';
+import ProjectsEmptyState from '../sections/projects/ProjectsEmptyState';
 import { solar, solarApp } from '../theme/solar';
 import { Project } from '../types/models';
 
@@ -28,6 +29,7 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 export default function ProjectPage() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState<boolean>(false);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
@@ -36,6 +38,7 @@ export default function ProjectPage() {
     try {
       const response = await api.get<Project[]>('/project');
       setProjects(response.data ?? []);
+      setProjectsLoaded(true);
     } catch (error) {
       toast.error('Could not load projects');
     }
@@ -178,7 +181,11 @@ export default function ProjectPage() {
           })}
         </Box>
 
-        {/* Card grid */}
+        {/* Card grid — no-data hero when the account has zero projects,
+            otherwise the create tile + cards (with a filtered-empty notice). */}
+        {projectsLoaded && projects.length === 0 ? (
+          <ProjectsEmptyState onCreate={() => setCreateOpen(true)} />
+        ) : (
         <Box
           sx={{
             display: 'grid',
@@ -239,15 +246,49 @@ export default function ProjectPage() {
           {visibleProjects.map((project) => (
             <ProjectCard key={project.id} project={project} onOpen={() => openProject(project)} />
           ))}
-        </Box>
 
-        {/* Empty state for the current filter */}
-        {visibleProjects.length === 0 && (
-          <Typography sx={{ mt: '22px', fontSize: '14.5px', color: solarApp.label, textAlign: 'center' }}>
-            {projects.length === 0
-              ? 'No projects yet — create your first one to start tracking solar output.'
-              : `No ${filter} projects.`}
-          </Typography>
+          {/* Projects exist, but none match the current filter */}
+          {projectsLoaded && visibleProjects.length === 0 && (
+            <Box
+              sx={{
+                gridColumn: { xs: 'auto', sm: '2 / -1' },
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                gap: '5px',
+                p: '6px 4px',
+                minHeight: 180,
+              }}
+            >
+              <Typography component="h4" sx={{ fontFamily: solar.fontDisplay, fontSize: '17px', fontWeight: 600, color: solar.ink, m: 0 }}>
+                No {filter} projects
+              </Typography>
+              <Typography sx={{ fontSize: '13.5px', color: solar.muted, m: 0 }}>
+                None of your projects are {filter} right now.
+              </Typography>
+              <Box
+                component="button"
+                type="button"
+                onClick={() => setFilter('all')}
+                sx={{
+                  mt: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  fontFamily: solar.fontBody,
+                  color: solar.accentDeep,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  p: 0,
+                  '&:hover': { textDecoration: 'underline' },
+                }}
+              >
+                View all projects
+              </Box>
+            </Box>
+          )}
+        </Box>
         )}
       </Box>
 
