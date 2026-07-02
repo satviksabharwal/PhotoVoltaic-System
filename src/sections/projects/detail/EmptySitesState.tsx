@@ -12,8 +12,8 @@ interface EmptySitesStateProps {
   onUseMyLocation: () => void;
 }
 
-/** Sun with fanned rays above a small solar-panel card on a stub post. */
-function EmptySitesIllustration() {
+/** Sun with fanned rays above a small solar-panel card on a stub post. Also reused by the Insights cold-start panel. */
+export function EmptySitesIllustration() {
   const rayAngles = [-157.5, -135, -112.5, -90, -67.5, -45, -22.5];
   const cellColumns = [41, 59, 77];
   const cellRows = [63, 77];
@@ -42,7 +42,16 @@ function EmptySitesIllustration() {
         const x2 = 66 + Math.cos(radians) * 26;
         const y2 = 38 + Math.sin(radians) * 26;
         return (
-          <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} stroke={solar.accent} strokeWidth={3} strokeLinecap="round" />
+          <line
+            key={angle}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke={solar.accent}
+            strokeWidth={3}
+            strokeLinecap="round"
+          />
         );
       })}
 
@@ -53,7 +62,9 @@ function EmptySitesIllustration() {
       <rect x={63} y={90} width={6} height={10} rx={2} fill="#E0D8C4" />
       <rect x={36} y={58} width={60} height={34} rx={8} fill="#fff" stroke="#E7E0CF" strokeWidth={1.5} />
       {cellRows.map((y) =>
-        cellColumns.map((x) => <rect key={`${x}-${y}`} x={x} y={y} width={16} height={12} rx={2.5} fill="url(#empty-cell)" />)
+        cellColumns.map((x) => (
+          <rect key={`${x}-${y}`} x={x} y={y} width={16} height={12} rx={2.5} fill="url(#empty-cell)" />
+        ))
       )}
     </svg>
   );
@@ -71,7 +82,9 @@ export default function EmptySitesState({ onAddFirst, onUseMyLocation }: EmptySi
       }}
     >
       <EmptySitesIllustration />
-      <Typography sx={{ fontFamily: solar.fontDisplay, fontSize: '19px', fontWeight: 700, color: solar.ink, mt: '18px' }}>
+      <Typography
+        sx={{ fontFamily: solar.fontDisplay, fontSize: '19px', fontWeight: 700, color: solar.ink, mt: '18px' }}
+      >
         No sites yet
       </Typography>
       <Typography sx={{ maxWidth: 360, fontSize: '14px', color: solar.muted, lineHeight: 1.6, mt: '8px' }}>

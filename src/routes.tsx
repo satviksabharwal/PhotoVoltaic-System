@@ -13,7 +13,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProjectPage from './pages/ProjectPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
-import ProductVisualization from './pages/ProductVisualization';
+import InsightsPage from './pages/InsightsPage';
 
 // ----------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ export default function Router() {
       children: [
         { path: 'projects', element: <ProjectPage /> },
         { path: 'projects/:projectId', element: <ProjectDetailPage /> },
-        { path: 'projects/:projectId/:productId', element: <ProductVisualization /> },
+        { path: 'projects/:projectId/:productId', element: <InsightsPage /> },
         { path: 'account-settings', element: <AccountSettingsPage /> },
       ],
     },

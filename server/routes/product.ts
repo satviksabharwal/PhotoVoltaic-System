@@ -159,6 +159,52 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
+// Hourly readings for one site, oldest first — powers the Insights page
+// (period totals, deltas and the sunshine-fingerprint heatmap). Fetched in
+// pages of 1000 because PostgREST caps rows per request.
+router.get('/readings', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const user = getUserIdFromtoken(req);
+    const productId = req.query.productId as string | undefined;
+    if (!productId) {
+      res.json([]);
+      return;
+    }
+
+    const PAGE_SIZE = 1000;
+    const { count, error: countError } = await supabaseAdmin
+      .from('pv_readings')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user)
+      .eq('product_id', productId);
+    if (countError) throw countError;
+
+    const pageCount = Math.ceil((count ?? 0) / PAGE_SIZE);
+    const pages = await Promise.all(
+      Array.from({ length: pageCount }, (_, page) =>
+        supabaseAdmin
+          .from('pv_readings')
+          .select('recorded_at, pv_value, solar_rad')
+          .eq('user_id', user)
+          .eq('product_id', productId)
+          .order('recorded_at', { ascending: true })
+          .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1)
+      )
+    );
+
+    const rows: { recorded_at: string; pv_value: number; solar_rad: number | null }[] = [];
+    pages.forEach((page) => {
+      if (page.error) throw page.error;
+      rows.push(...(page.data as typeof rows));
+    });
+
+    res.json(rows.map((row) => ({ recordedAt: row.recorded_at, kwh: row.pv_value, solarRad: row.solar_rad })));
+  } catch (error) {
+    console.error('Error in product readings API:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Get Individual Product API
 router.get('/item', verifyToken, async (req: Request, res: Response) => {
   try {
