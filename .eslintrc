@@ -98,7 +98,8 @@
           1,
           {
             "ignoreRestSiblings": false,
-            "argsIgnorePattern": "^_"
+            "argsIgnorePattern": "^_",
+            "caughtErrors": "none"
           }
         ],
         "import/no-duplicates": 1,

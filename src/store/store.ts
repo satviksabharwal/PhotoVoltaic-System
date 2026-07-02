@@ -6,13 +6,10 @@ import thunk from 'redux-thunk';
 
 import { rootReducer } from './root-reducer';
 
-const middleWares = [process.env.NODE_ENV === 'development' && logger, thunk].filter(
-  Boolean
-) as Middleware[];
+const middleWares = [import.meta.env.DEV && logger, thunk].filter(Boolean) as Middleware[];
 
 const composeEnhancer =
-  (process.env.NODE_ENV !== 'production' && window && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) ||
-  compose;
+  (import.meta.env.DEV && window && window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__) || compose;
 
 const persistConfig = {
   key: 'root',

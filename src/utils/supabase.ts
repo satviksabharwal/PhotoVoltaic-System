@@ -7,15 +7,15 @@ import { createClient } from '@supabase/supabase-js';
 // current access token to every backend request via an axios interceptor.
 //
 // The URL and anon key are public values (RLS guards the data); they are
-// inlined at build time by Create React App from REACT_APP_* variables.
+// inlined at build time by Vite from VITE_* variables.
 // ----------------------------------------------------------------------
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabasePublishableKey = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabasePublishableKey) {
   throw new Error(
-    'Missing REACT_APP_SUPABASE_URL / REACT_APP_SUPABASE_PUBLISHABLE_KEY. ' +
+    'Missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY. ' +
       'Copy them from your Supabase dashboard (Settings → API Keys) into .env.development — see .env.example.'
   );
 }
