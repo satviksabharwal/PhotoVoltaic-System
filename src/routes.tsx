@@ -2,6 +2,7 @@ import { Navigate, useRoutes } from "react-router-dom";
 // layouts
 import DashboardLayout from "./layouts/dashboard";
 import SimpleLayout from "./layouts/simple";
+import SolarSenseLayout from "./layouts/solarsense/SolarSenseLayout";
 
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -25,6 +26,13 @@ export default function Router() {
         { element: <Navigate to="/dashboard/app" />, index: true },
         { path: "app", element: <DashboardAppPage /> },
         { path: "profile-setting", element: <ProfileSetting /> },
+      ],
+    },
+    // Redesigned SolarSense pages — top-bar shell, no sidebar. Same URLs as before.
+    {
+      path: "/dashboard",
+      element: <SolarSenseLayout />,
+      children: [
         { path: "projects", element: <ProjectPage /> },
         { path: "projects/:projectId", element: <ProductPage /> },
         { path: "projects/:projectId/:productId", element: <ProductVisualization /> },

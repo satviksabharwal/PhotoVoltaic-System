@@ -11,7 +11,7 @@ import { AppDispatch } from '../../../store/store';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { selectCurrentUser } from '../../../store/user/user.selector';
 import { supabase } from '../../../utils/supabase';
-import account from '../../../_mock/account';
+import { solar } from '../../../theme/solar';
 
 const MENU_OPTIONS = [
   {
@@ -72,7 +72,25 @@ export default function AccountPopover() {
           }),
         }}
       >
-        <Avatar src={account.photoURL} alt="photoURL" />
+        <Avatar
+          sx={{
+            width: 40,
+            height: 40,
+            background: 'linear-gradient(135deg, #FFD54F, #F0A500)',
+            color: '#3E2E00',
+            fontFamily: solar.fontDisplay,
+            fontWeight: 700,
+            fontSize: 14,
+            boxShadow: '0 2px 6px rgba(240,165,0,.35)',
+          }}
+        >
+          {(currentUser?.displayName ?? 'S')
+            .split(' ')
+            .map((part) => part.charAt(0))
+            .join('')
+            .slice(0, 2)
+            .toUpperCase()}
+        </Avatar>
       </IconButton>
 
       <Popover

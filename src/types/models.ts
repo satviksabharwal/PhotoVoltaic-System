@@ -1,4 +1,4 @@
-// Shared domain models, mirroring the backend Mongoose schemas (server/models).
+// Shared domain models, mirroring the backend API shapes (server/mappers.ts).
 // ----------------------------------------------------------------------
 
 /** The authenticated user as stored in redux (subset returned by the auth API). */
@@ -19,6 +19,13 @@ export interface Project {
   name: string;
   isReportGeneratd?: boolean;
   createdDate?: string;
+  /** Free-text place label, e.g. "Poland · Kraków". */
+  location?: string | null;
+  active?: boolean;
+  updatedAt?: string;
+  /** Card aggregates computed by the list endpoint. */
+  sites?: number;
+  capacity?: number;
 }
 
 /** A PV product = a panel array with physical + geographic configuration. */

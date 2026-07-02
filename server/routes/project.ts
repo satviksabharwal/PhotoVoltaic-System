@@ -10,7 +10,11 @@ const router = express.Router();
 
 const UNIQUE_VIOLATION = '23505';
 
-// Get All Projects API
+/** Fallback Wp/m² (mono) for products saved before kwp existed. */
+const FALLBACK_WP_PER_M2 = 205;
+
+// Get All Projects API — each project carries card aggregates (site count,
+// total installed kWp) for the Projects page.
 router.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
     const user = getUserIdFromtoken(req);
@@ -28,13 +32,32 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('projects')
-      .select('*')
-      .eq('user_id', user)
-      .order('created_at', { ascending: true });
-    if (error) throw error;
-    res.json((data as ProjectRow[]).map(toLegacyProject));
+    const [projectsResult, productsResult] = await Promise.all([
+      supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('user_id', user)
+        .order('created_at', { ascending: true }),
+      supabaseAdmin.from('products').select('*').eq('user_id', user),
+    ]);
+    if (projectsResult.error) throw projectsResult.error;
+    if (productsResult.error) throw productsResult.error;
+
+    const stats = new Map<string, { sites: number; capacity: number }>();
+    (productsResult.data as ProductRow[]).forEach((product) => {
+      const entry = stats.get(product.project_id) ?? { sites: 0, capacity: 0 };
+      entry.sites += 1;
+      entry.capacity += product.kwp ?? (product.area * FALLBACK_WP_PER_M2) / 1000;
+      stats.set(product.project_id, entry);
+    });
+
+    res.json(
+      (projectsResult.data as ProjectRow[]).map((row) => ({
+        ...toLegacyProject(row),
+        sites: stats.get(row.id)?.sites ?? 0,
+        capacity: Math.round((stats.get(row.id)?.capacity ?? 0) * 10) / 10,
+      }))
+    );
   } catch (error) {
     console.error('Error in get all projects API:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -65,16 +88,30 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// Update Project API
+// Update Project API — accepts any subset of { name, location, active }.
 router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name } = req.body as { name: string };
+    const { name, location, active } = req.body as {
+      name?: string;
+      location?: string;
+      active?: boolean;
+    };
     const user = getUserIdFromtoken(req);
+
+    const patch = {
+      ...(name !== undefined ? { name } : {}),
+      ...(location !== undefined ? { location } : {}),
+      ...(active !== undefined ? { active } : {}),
+    };
+    if (!Object.keys(patch).length) {
+      res.status(400).json({ error: 'Nothing to update' });
+      return;
+    }
 
     const { data, error } = await supabaseAdmin
       .from('projects')
-      .update({ name })
+      .update(patch)
       .eq('id', id)
       .eq('user_id', user)
       .select();

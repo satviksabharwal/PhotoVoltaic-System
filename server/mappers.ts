@@ -16,6 +16,7 @@ export function toLegacyProject(row: ProjectRow) {
     createdDate: row.created_at,
     location: row.location ?? null,
     active: row.active ?? true,
+    updatedAt: row.updated_at ?? row.created_at,
   };
 }
 

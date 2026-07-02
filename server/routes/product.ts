@@ -36,6 +36,18 @@ interface CreateProductBody {
   tariff?: number;
 }
 
+/**
+ * Bumps the parent project's updated_at so "Updated X ago" on the Projects
+ * page reflects site changes. Best-effort: failures are ignored (the column
+ * only exists once the solarsense_fields migration has run).
+ */
+async function touchProject(projectId: string) {
+  await supabaseAdmin
+    .from('projects')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', projectId);
+}
+
 /** Columns for the optional SolarSense fields, only when the client sent them. */
 function solarSenseColumns(body: CreateProductBody) {
   return {
@@ -148,6 +160,7 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       throw insertError;
     }
 
+    await touchProject(project);
     res.json({ message: 'Product created successfully' });
   } catch (error) {
     console.error('Error in POST product API:', error);
@@ -238,6 +251,7 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
+    await touchProject((data[0] as ProductRow).project_id);
     res.json({ message: 'Product updated successfully' });
   } catch (error) {
     console.error('Error in update Product API:', error);
@@ -263,6 +277,7 @@ router.delete('/delete/:id', verifyToken, async (req: Request, res: Response) =>
       return;
     }
 
+    await touchProject((data[0] as ProductRow).project_id);
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Error in delete Product API:', error);
