@@ -95,7 +95,7 @@ export default function Nav({ openNav, onCloseNav }: NavProps) {
             </Typography>
 
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              email us: satviksabharwal7@gmail.com
+              email us: createwithsatvik@gmail.com
             </Typography>
           </Box>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>

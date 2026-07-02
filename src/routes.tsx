@@ -7,7 +7,6 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import Page404 from "./pages/Page404";
 import DashboardAppPage from "./pages/DashboardAppPage";
-import TermsandConditions from "./sections/auth/register/TermsandConditions";
 import ProfileSetting from "./pages/ProfileSetting";
 import ForgotPassword from "./pages/ForgotPassword";
 import ProjectPage from "./pages/ProjectPage";
@@ -37,10 +36,6 @@ export default function Router() {
     {
       path: "register",
       element: <RegisterPage />,
-    },
-    {
-      path: "tac",
-      element: <TermsandConditions />,
     },
     {
       path: "forgotpassword",

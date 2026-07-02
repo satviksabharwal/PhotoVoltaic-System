@@ -21,7 +21,6 @@ export default function App() {
     if (
       (location.pathname === "/login" ||
         location.pathname === "/register" ||
-        location.pathname === "/tac" ||
         location.pathname === "/forgotpassword" ||
         location.pathname === "/404") &&
       currentUser?.email !== undefined
@@ -31,7 +30,6 @@ export default function App() {
       if (
         (location.pathname === "/login" && currentUser?.email === undefined) ||
         (location.pathname === "/register" && currentUser?.email === undefined) ||
-        (location.pathname === "/tac" && currentUser?.email === undefined) ||
         (location.pathname === "/forgotpassword" && currentUser?.email === undefined) ||
         (location.pathname === "/404" && currentUser?.email === undefined)
       ) {
