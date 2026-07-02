@@ -27,6 +27,11 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: allowedOrigins || true }));
 
+// Healthcheck for the hosting platform and uptime monitors.
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.use('/api/user', userRoutes);
 
 app.use('/api/project', projectRoutes);
