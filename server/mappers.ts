@@ -33,6 +33,13 @@ export function toLegacyProduct(row: ProductRow) {
     powerPeak: row.power_peak ?? undefined,
     pvValue: row.pv_value ?? undefined,
     isReportGeneratdProduct: row.report_generated,
+    // SolarSense fields (defaults for rows saved before the migration).
+    module: row.module_type ?? 'mono',
+    mounting: row.mounting ?? 'roof',
+    losses: row.losses_pct ?? 14,
+    tariff: row.tariff ?? null,
+    kwp: row.kwp ?? null,
+    estAnnualKwh: row.est_annual_kwh ?? null,
   };
 }
 

@@ -1,27 +1,17 @@
 import express from 'express';
 import type { Request, Response } from 'express';
-import axios from 'axios';
-import {
-  verifyToken,
-  getUserIdFromtoken,
-  getRandomNumber,
-  calculateElectricityProduced,
-  weathertoken,
-  convertToDoubleDigit,
-} from '../commonFunctions.js';
-import type { WeatherHistoryResponse } from '../commonFunctions.js';
+import { verifyToken, getUserIdFromtoken } from '../commonFunctions.js';
 import { supabaseAdmin } from '../supabaseAdmin.js';
 import { toLegacyProduct } from '../mappers.js';
+import { capacityKwp, fetchCurrentGti, fetchPvgisAnnualKwh, hourlyEnergyKwh } from '../solar.js';
+import type { PanelConfig } from '../solar.js';
 import type { PanelOrientation, ProductRow } from '../types.js';
 
 const router = express.Router();
 
 const UNIQUE_VIOLATION = '23505';
 
-/** Module Wp/m² used to derive installed capacity (kWp) from area. */
-const WP_PER_M2 = { mono: 205, poly: 175, thin: 120 } as const;
-
-interface CreateProductBody {
+interface ProductBody {
   name: string;
   orientation: PanelOrientation;
   inclination: number;
@@ -29,17 +19,28 @@ interface CreateProductBody {
   longitude: number;
   latitude: number;
   project: string;
-  // SolarSense fields (optional; require the solarsense_fields migration).
   module?: 'mono' | 'poly' | 'thin';
   mounting?: 'roof' | 'ground' | 'track';
   losses?: number;
   tariff?: number;
 }
 
+function toPanelConfig(body: ProductBody): PanelConfig {
+  return {
+    latitude: body.latitude,
+    longitude: body.longitude,
+    orientation: body.orientation,
+    inclination: body.inclination,
+    area: body.area,
+    module: body.module ?? 'mono',
+    mounting: body.mounting ?? 'roof',
+    losses: body.losses ?? 14,
+  };
+}
+
 /**
  * Bumps the parent project's updated_at so "Updated X ago" on the Projects
- * page reflects site changes. Best-effort: failures are ignored (the column
- * only exists once the solarsense_fields migration has run).
+ * page reflects site changes. Best-effort: failures are ignored.
  */
 async function touchProject(projectId: string) {
   await supabaseAdmin
@@ -48,20 +49,19 @@ async function touchProject(projectId: string) {
     .eq('id', projectId);
 }
 
-/** Columns for the optional SolarSense fields, only when the client sent them. */
-function solarSenseColumns(body: CreateProductBody) {
-  return {
-    ...(body.module ? { module_type: body.module, kwp: (body.area * WP_PER_M2[body.module]) / 1000 } : {}),
-    ...(body.mounting ? { mounting: body.mounting } : {}),
-    ...(body.losses !== undefined ? { losses_pct: body.losses } : {}),
-    ...(body.tariff !== undefined ? { tariff: body.tariff } : {}),
-  };
+/**
+ * Stores the PVGIS annual estimate on a product. Best-effort: ignored when
+ * PVGIS was unreachable or the est_annual_kwh migration has not run yet.
+ */
+async function storeAnnualEstimate(productId: string, estAnnualKwh: number | null) {
+  if (estAnnualKwh == null) return;
+  await supabaseAdmin.from('products').update({ est_annual_kwh: estAnnualKwh }).eq('id', productId);
 }
 
 // Define the route for creating a new product
 router.post('/create', verifyToken, async (req: Request, res: Response) => {
   try {
-    const body = req.body as CreateProductBody;
+    const body = req.body as ProductBody;
     const { name, orientation, inclination, area, longitude, latitude, project } = body;
     const user = getUserIdFromtoken(req);
 
@@ -78,8 +78,6 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
-    // Cheap duplicate check before spending a weather API call; the
-    // unique(project_id, name) constraint is the real guarantee.
     const { data: existingProduct, error: existingError } = await supabaseAdmin
       .from('products')
       .select('id')
@@ -92,66 +90,34 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
-    const currentdate = new Date();
-    const fromDate = `${currentdate.getFullYear()}-${convertToDoubleDigit(
-      currentdate.getMonth() + 1
-    )}-${convertToDoubleDigit(currentdate.getDate())}`;
-    const endDate = `${currentdate.getFullYear()}-${convertToDoubleDigit(
-      currentdate.getMonth() + 1
-    )}-${convertToDoubleDigit(currentdate.getDate() + 1)}`;
-    const dateWithHours = `${fromDate}:${convertToDoubleDigit(
-      currentdate.getHours()
-    )}`;
-    const weatherResponse = await axios.get<WeatherHistoryResponse>(
-      'https://api.weatherbit.io/v2.0/history/hourly',
-      {
-        params: {
-          lat: latitude,
-          lon: longitude,
-          start_date: fromDate,
-          end_date: endDate,
-          key: weathertoken,
-        },
-      }
-    );
-    if (!weatherResponse.data.data || !weatherResponse.data.data.length) {
-      console.error('Issue with weather API', weatherResponse?.data?.data);
-      res.status(502).json({ error: 'Issue with weather API' });
-      return;
-    }
+    // Current-hour irradiance + authoritative annual estimate, in parallel.
+    // Both are best-effort: a flaky data source never blocks saving the site.
+    const panel = toPanelConfig(body);
+    const [gti, estAnnualKwh] = await Promise.all([fetchCurrentGti(panel), fetchPvgisAnnualKwh(panel)]);
+    const pvValue = gti != null ? hourlyEnergyKwh(panel, gti) : null;
 
-    const filteredData = weatherResponse.data.data.filter(
-      (weather) => weather?.datetime === dateWithHours
-    );
-    let pvValue;
-    let powerPeak;
-    if (filteredData?.length) {
-      const opitionalSolarVal = getRandomNumber();
-      pvValue = await calculateElectricityProduced(
-        { area },
-        filteredData[0],
-        opitionalSolarVal
-      );
-      const unixTimestamp = filteredData[0]?.ts;
-      const dateTs = new Date((unixTimestamp ?? NaN) * 1000);
-      // Hours part from the timestamp
-      const hoursTs = dateTs.getHours();
-      powerPeak = (pvValue * 1000) / hoursTs;
-    }
-
-    const { error: insertError } = await supabaseAdmin.from('products').insert({
-      project_id: project,
-      user_id: user,
-      name,
-      orientation,
-      inclination,
-      area,
-      latitude,
-      longitude,
-      pv_value: pvValue ?? null,
-      power_peak: powerPeak ?? null,
-      ...solarSenseColumns(body),
-    });
+    const { data: inserted, error: insertError } = await supabaseAdmin
+      .from('products')
+      .insert({
+        project_id: project,
+        user_id: user,
+        name,
+        orientation,
+        inclination,
+        area,
+        latitude,
+        longitude,
+        pv_value: pvValue,
+        // Average power over the current hour, in watts.
+        power_peak: pvValue != null ? pvValue * 1000 : null,
+        module_type: panel.module,
+        mounting: panel.mounting,
+        losses_pct: panel.losses,
+        tariff: body.tariff ?? null,
+        kwp: capacityKwp(panel.area, panel.module),
+      })
+      .select()
+      .single();
     if (insertError) {
       if (insertError.code === UNIQUE_VIOLATION) {
         res.status(400).json({ error: 'Product name already exists!' });
@@ -160,6 +126,7 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       throw insertError;
     }
 
+    await storeAnnualEstimate((inserted as ProductRow).id, estAnnualKwh);
     await touchProject(project);
     res.json({ message: 'Product created successfully' });
   } catch (error) {
@@ -216,13 +183,16 @@ router.get('/item', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// Update Product API
+// Update Product API — recomputes capacity and refreshes the PVGIS estimate,
+// since the panel geometry may have changed.
 router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const body = req.body as Omit<CreateProductBody, 'project'>;
+    const body = req.body as Omit<ProductBody, 'project'>;
     const { name, orientation, inclination, area, longitude, latitude } = body;
     const user = getUserIdFromtoken(req);
+
+    const panel = toPanelConfig(body as ProductBody);
 
     const { data, error } = await supabaseAdmin
       .from('products')
@@ -233,7 +203,11 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
         area,
         longitude,
         latitude,
-        ...solarSenseColumns(body as CreateProductBody),
+        module_type: panel.module,
+        mounting: panel.mounting,
+        losses_pct: panel.losses,
+        tariff: body.tariff ?? null,
+        kwp: capacityKwp(panel.area, panel.module),
       })
       .eq('id', id)
       .eq('user_id', user)
@@ -251,6 +225,8 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
+    const estAnnualKwh = await fetchPvgisAnnualKwh(panel);
+    await storeAnnualEstimate(id, estAnnualKwh);
     await touchProject((data[0] as ProductRow).project_id);
     res.json({ message: 'Product updated successfully' });
   } catch (error) {

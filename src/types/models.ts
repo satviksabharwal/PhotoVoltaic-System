@@ -28,6 +28,9 @@ export interface Project {
   capacity?: number;
 }
 
+export type ModuleType = 'mono' | 'poly' | 'thin';
+export type MountingType = 'roof' | 'ground' | 'track';
+
 /** A PV product = a panel array with physical + geographic configuration. */
 export interface Product {
   id: string;
@@ -35,6 +38,14 @@ export interface Product {
   orientation: PanelOrientation;
   inclination: number;
   area: number;
+  module?: ModuleType;
+  mounting?: MountingType;
+  losses?: number;
+  tariff?: number | null;
+  /** Installed capacity, computed server-side from area × module Wp/m². */
+  kwp?: number | null;
+  /** Authoritative yearly output estimate (kWh) from PVGIS; null if unavailable. */
+  estAnnualKwh?: number | null;
   longitude: number;
   latitude: number;
   project: string;

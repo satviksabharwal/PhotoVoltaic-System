@@ -45,6 +45,9 @@ interface AuthFieldProps {
   minLength?: number;
   autoComplete?: string;
   value?: string;
+  step?: string;
+  min?: string | number;
+  max?: string | number;
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
   /** Render this field as a password whose visibility is driven by `visible`. */
   isPassword?: boolean;
@@ -63,6 +66,9 @@ export default function AuthField({
   minLength,
   autoComplete,
   value,
+  step,
+  min,
+  max,
   onChange,
   isPassword = false,
   visible = false,
@@ -85,6 +91,9 @@ export default function AuthField({
           minLength={minLength}
           autoComplete={autoComplete}
           value={value}
+          step={step}
+          min={min}
+          max={max}
           onChange={onChange}
           style={showEye ? { paddingRight: 48 } : undefined}
         />

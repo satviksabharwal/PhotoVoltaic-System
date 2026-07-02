@@ -42,6 +42,8 @@ export interface ProductRow {
   losses_pct?: number;
   tariff?: number | null;
   kwp?: number | null;
+  // Added by the product_annual_estimate migration (PVGIS yearly kWh).
+  est_annual_kwh?: number | null;
 }
 
 export interface PvReadingRow {

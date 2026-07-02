@@ -1,110 +1,79 @@
 import cron from 'node-cron';
-import axios from 'axios';
 import moment from 'moment';
-import {
-  calculateElectricityProduced,
-  getRandomNumber,
-  weathertoken,
-  convertToDoubleDigit,
-} from './commonFunctions.js';
-import type { WeatherHistoryResponse } from './commonFunctions.js';
 import { supabaseAdmin } from './supabaseAdmin.js';
 import { generateAndSendPDF } from './genrateDocument.js';
 import { readingsToLegacyPvDetails } from './mappers.js';
+import { fetchCurrentGti, hourlyEnergyKwh } from './solar.js';
+import type { PanelConfig } from './solar.js';
 import type { ProductRow, ProfileRow, ProjectRow, PvReadingRow } from './types.js';
 
-// Define the cron schedule to run every hour
+function toPanelConfig(product: ProductRow): PanelConfig {
+  return {
+    latitude: product.latitude,
+    longitude: product.longitude,
+    orientation: product.orientation,
+    inclination: product.inclination,
+    area: product.area,
+    module: product.module_type ?? 'mono',
+    mounting: product.mounting ?? 'roof',
+    losses: product.losses_pct ?? 14,
+  };
+}
+
+// Hourly: fetch panel-plane irradiance for every site and record the energy
+// produced this hour. unique(product_id, recorded_at) makes re-runs no-ops.
 export const executeCorn = () => {
-  cron.schedule('* * * * *', async () => {
+  cron.schedule('0 * * * *', async () => {
     try {
-      const currentdate = new Date();
-      const fromDate = moment().format('YYYY-MM-DD');
-      const endDate = moment().add(1, 'days').format('YYYY-MM-DD');
-      // The hour bucket this run writes; unique(product_id, recorded_at)
-      // makes re-runs within the same hour no-ops.
+      // The hour bucket this run writes.
       const recordedAt = moment().startOf('hour').toISOString(true);
 
-      try {
-        const { data: products, error } = await supabaseAdmin
-          .from('products')
-          .select('*');
-        if (error) throw error;
+      const { data: products, error } = await supabaseAdmin.from('products').select('*');
+      if (error) throw error;
 
-        (products as ProductRow[]).forEach(async (productData) => {
-          const weatherResponse = await axios.get<WeatherHistoryResponse>(
-            'https://api.weatherbit.io/v2.0/history/hourly',
-            {
-              params: {
-                lat: productData.latitude,
-                lon: productData.longitude,
-                start_date: fromDate,
-                end_date: endDate,
-                key: weathertoken,
-              },
-            }
-          );
+      (products as ProductRow[]).forEach(async (productData) => {
+        try {
           await autoGenrateReportFor30Days(productData);
-          const dateWithHours = `${fromDate}:${convertToDoubleDigit(
-            currentdate.getHours()
-          )}`;
-          if (
-            !weatherResponse.data.data ||
-            !weatherResponse.data.data.length
-          ) {
-            console.error(
-              'Issue with weather API',
-              weatherResponse?.data?.data
-            );
+
+          const panel = toPanelConfig(productData);
+          const gti = await fetchCurrentGti(panel);
+          if (gti == null) {
+            console.error(`No irradiance data for site ${productData.id} this hour`);
             return;
           }
 
-          const filteredData = weatherResponse.data.data.filter(
-            (weather) => weather?.datetime === dateWithHours
-          );
-          if (filteredData?.length) {
-            const { area, inclination } = productData;
-            const opitionalSolarVal = getRandomNumber();
-            const pvValue = await calculateElectricityProduced(
-              productData,
-              filteredData[0],
-              opitionalSolarVal
-            );
-            const unixTimestamp = filteredData[0]?.ts;
-            const dateTs = new Date((unixTimestamp ?? NaN) * 1000);
-            // Hours part from the timestamp
-            const hoursTs = dateTs.getHours();
-            const powerPeak = (pvValue * 1000) / (hoursTs ?? opitionalSolarVal);
+          const pvValue = hourlyEnergyKwh(panel, gti);
+          // Average power over the hour, in watts.
+          const powerPeak = pvValue * 1000;
 
-            const { data: inserted, error: upsertError } = await supabaseAdmin
-              .from('pv_readings')
-              .upsert(
-                {
-                  product_id: productData.id,
-                  project_id: productData.project_id,
-                  user_id: productData.user_id,
-                  recorded_at: recordedAt,
-                  pv_value: pvValue,
-                  power_peak: powerPeak,
-                  area,
-                  inclination,
-                  solar_rad: filteredData[0]?.dni ?? opitionalSolarVal,
-                },
-                { onConflict: 'product_id,recorded_at', ignoreDuplicates: true }
-              )
-              .select();
-            if (upsertError) {
-              console.error('Error saving reading:', upsertError);
-            } else if (inserted?.length) {
-              console.log("calculation completed for the hour and it's created");
-            } else {
-              console.log('Data already updated');
-            }
+          const { data: inserted, error: upsertError } = await supabaseAdmin
+            .from('pv_readings')
+            .upsert(
+              {
+                product_id: productData.id,
+                project_id: productData.project_id,
+                user_id: productData.user_id,
+                recorded_at: recordedAt,
+                pv_value: pvValue,
+                power_peak: powerPeak,
+                area: productData.area,
+                inclination: productData.inclination,
+                solar_rad: gti,
+              },
+              { onConflict: 'product_id,recorded_at', ignoreDuplicates: true }
+            )
+            .select();
+          if (upsertError) {
+            console.error('Error saving reading:', upsertError);
+          } else if (inserted?.length) {
+            console.log(`Recorded ${pvValue.toFixed(3)} kWh for site ${productData.id}`);
+          } else {
+            console.log('Data already updated');
           }
-        });
-      } catch (err) {
-        // Handle the error
-        console.error(err);
-      }
+        } catch (err) {
+          console.error('Error processing site', productData.id, err);
+        }
+      });
 
       console.log('Electricity calculation completed for the hour');
     } catch (error) {
