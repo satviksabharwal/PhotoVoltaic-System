@@ -181,7 +181,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleOpenSite = (site: Product) => {
-    navigate(`/dashboard/projects/${projectId}/${site.id}`, { state: site.name });
+    navigate(`/projects/${projectId}/${site.id}`, { state: site.name });
   };
 
   const handleRename = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -213,7 +213,7 @@ export default function ProjectDetailPage() {
     try {
       const response = await api.delete(`/project/delete/${projectId}`);
       toast.success(response.data.message);
-      navigate('/dashboard/projects');
+      navigate('/');
     } catch (error) {
       toast.error('Could not delete the project');
     }
@@ -254,7 +254,7 @@ export default function ProjectDetailPage() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, mb: '14px' }}>
           <Box
             component={RouterLink}
-            to="/dashboard/projects"
+            to="/"
             sx={{ color: solarApp.chipCount, textDecoration: 'none', '&:hover': { color: solar.accentDeep } }}
           >
             Projects

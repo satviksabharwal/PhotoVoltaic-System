@@ -5,13 +5,13 @@ import { useDispatch, useSelector } from 'react-redux';
 // @mui
 import { Box, Divider, Typography, MenuItem, Avatar, IconButton, Popover } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import Iconify from '../../../components/iconify';
-import { AppDispatch } from '../../../store/store';
-import { setCurrentUserAction } from '../../../store/user/user.action';
-import { selectCurrentUser } from '../../../store/user/user.selector';
-import { supabase } from '../../../utils/supabase';
-import { solar } from '../../../theme/solar';
-import { avatarInitials } from '../../../sections/settings/settingsStyles';
+import Iconify from '../../components/iconify';
+import { AppDispatch } from '../../store/store';
+import { setCurrentUserAction } from '../../store/user/user.action';
+import { selectCurrentUser } from '../../store/user/user.selector';
+import { supabase } from '../../utils/supabase';
+import { solar } from '../../theme/solar';
+import { avatarInitials } from '../../sections/settings/settingsStyles';
 
 // ----------------------------------------------------------------------
 // Top-right profile avatar dropdown, per the SETTINGS_PAGE design handoff:
@@ -21,8 +21,8 @@ import { avatarInitials } from '../../../sections/settings/settingsStyles';
 // ----------------------------------------------------------------------
 
 const MENU_OPTIONS = [
-  { label: 'Home', icon: 'eva:home-outline', path: '/dashboard/app' },
-  { label: 'Account settings', icon: 'eva:settings-2-outline', path: '/dashboard/account-settings' },
+  { label: 'Home', icon: 'eva:home-outline', path: '/' },
+  { label: 'Account settings', icon: 'eva:settings-2-outline', path: '/account-settings' },
 ];
 
 const AVATAR_RING = '0 0 0 2px #fff, 0 0 0 4px rgba(255,193,7,.55)';

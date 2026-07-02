@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import SolarMark from '../../sections/auth/SolarMark';
 import { solar, solarApp } from '../../theme/solar';
-import AccountPopover from '../dashboard/header/AccountPopover';
+import AccountPopover from './AccountPopover';
 
 // ----------------------------------------------------------------------
 // SolarSense app shell: slim white top bar (wordmark left, avatar right)

@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">
-  <!-- SolarSense sunrise mark: yellow sun rising over a white horizon on an ink tile -->
-  <rect width="44" height="44" rx="12" fill="#1D1A14"/>
-  <circle cx="22" cy="34" r="12" fill="#FFC107"/>
-  <rect x="8" y="33" width="28" height="4" rx="2" fill="#fff" opacity="0.9"/>
-</svg>

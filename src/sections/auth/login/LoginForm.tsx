@@ -51,7 +51,7 @@ export default function LoginForm() {
       // automatically (utils/api.ts); redux only keeps display data.
       const displayName = (data.user?.user_metadata?.display_name as string | undefined) ?? email;
       dispatch(setCurrentUserAction({ displayName, email }));
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     } catch (error) {
       toast.error(`${error}`);
     }

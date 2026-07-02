@@ -8,7 +8,6 @@ import Router from "./routes";
 import ThemeProvider from "./theme";
 // components
 import ScrollToTop from "./components/scroll-to-top";
-import { StyledChart } from "./components/chart";
 import { selectCurrentUser } from "./store/user/user.selector";
 // ----------------------------------------------------------------------
 
@@ -25,7 +24,7 @@ export default function App() {
         location.pathname === "/404") &&
       currentUser?.email !== undefined
     ) {
-      navigate("/dashboard/app");
+      navigate("/");
     } else if (currentUser === undefined || currentUser?.email === undefined) {
       if (
         (location.pathname === "/login" && currentUser?.email === undefined) ||
@@ -43,7 +42,6 @@ export default function App() {
     <ThemeProvider>
       <ToastContainer />
       <ScrollToTop />
-      <StyledChart />
       <Router />
     </ThemeProvider>
   );

@@ -27,7 +27,7 @@ export default function AccountSettingsPage() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, mb: '14px' }}>
           <Box
             component={RouterLink}
-            to="/dashboard/projects"
+            to="/"
             sx={{ color: solarApp.chipCount, textDecoration: 'none', '&:hover': { color: solar.accentDeep } }}
           >
             Projects

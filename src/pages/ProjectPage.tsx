@@ -89,7 +89,7 @@ export default function ProjectPage() {
   };
 
   const openProject = (project: Project) => {
-    navigate(`/dashboard/projects/${project.id}`, { state: project.name });
+    navigate(`/projects/${project.id}`, { state: project.name });
   };
 
   return (
