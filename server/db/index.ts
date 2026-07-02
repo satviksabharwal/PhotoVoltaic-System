@@ -7,10 +7,13 @@ import { pvDetailsSchema } from '../models/pvDetails.js';
 
 const { MONGODB_URI } = process.env;
 
+if (!MONGODB_URI) {
+  throw new Error('Missing MONGODB_URI environment variable — see server/.env.example');
+}
+
 // Connect to MongoDB
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect(MONGODB_URI).catch((error) => {
+  console.error('MongoDB connection error:', error);
 });
 
 export const User = mongoose.model('User', userSchema);

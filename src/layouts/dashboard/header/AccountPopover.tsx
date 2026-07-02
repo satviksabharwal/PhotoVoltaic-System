@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppDispatch } from '../../../store/store';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { selectCurrentUser } from '../../../store/user/user.selector';
+import { supabase } from '../../../utils/supabase';
 import account from '../../../_mock/account';
 
 const MENU_OPTIONS = [
@@ -42,11 +43,14 @@ export default function AccountPopover() {
     setOpen(null);
   };
 
-  const handleLogOut = () => {
+  const handleLogOut = async () => {
     handleClose();
+    // End the Supabase session before wiping local state.
+    await supabase.auth.signOut();
     dispatch(setCurrentUserAction(null));
     // clear values after logout!
     window.localStorage.clear();
+    navigate('/login', { replace: true });
   };
 
   return (

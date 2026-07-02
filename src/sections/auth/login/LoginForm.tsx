@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Link } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AxiosError, AxiosResponse } from 'axios';
 import { useDispatch } from 'react-redux';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { AppDispatch } from '../../../store/store';
-import api from '../../../utils/api';
+import { supabase } from '../../../utils/supabase';
 // sections
 import AuthField, { SubmitButton } from '../AuthField';
 import { solar } from '../tokens';
@@ -18,15 +17,6 @@ import { solar } from '../tokens';
 interface LoginFormFields {
   email: string;
   password: string;
-}
-
-interface LoginResponse {
-  token?: string;
-  displayName?: string;
-}
-
-interface ErrorResponse {
-  error?: string;
 }
 
 const defaultFormFields: LoginFormFields = { email: '', password: '' };
@@ -50,20 +40,18 @@ export default function LoginForm() {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = '/user/login';
-      await api.post<LoginResponse>(url, { email, password }).then(
-        (response: AxiosResponse<LoginResponse>) => {
-          toast.success('Login Successful!!');
-          resetFormFields();
-          const tokenId = response?.data?.token;
-          const displayName = response?.data?.displayName;
-          dispatch(setCurrentUserAction({ tokenId, displayName, email }));
-          navigate('/dashboard', { replace: true });
-        },
-        (error: AxiosError<ErrorResponse>) => {
-          toast.error(error.response?.data?.error);
-        }
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success('Login Successful!!');
+      resetFormFields();
+      // The session token is managed by Supabase and attached to API requests
+      // automatically (utils/api.ts); redux only keeps display data.
+      const displayName = (data.user?.user_metadata?.display_name as string | undefined) ?? email;
+      dispatch(setCurrentUserAction({ displayName, email }));
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       toast.error(`${error}`);
     }

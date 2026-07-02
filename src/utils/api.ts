@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { supabase } from './supabase';
 
 // ----------------------------------------------------------------------
 // Centralized API client.
 //
 // The base URL is resolved ONCE, from the environment, so that every request
-// throughout the app only ever passes a *path* (e.g. `/user/login`) — never a
+// throughout the app only ever passes a *path* (e.g. `/project`) — never a
 // hardcoded, environment-specific full URL.
 //
 //   - Local development : `REACT_APP_API_URL` comes from `.env.development`
@@ -32,6 +33,19 @@ export const API_BASE_URL = resolveBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+});
+
+// Attach the current Supabase access token to every request. This runs after
+// per-request config is merged, so it also replaces any stale token a caller
+// passed manually via `headers: { Authorization: ... }`. `getSession()`
+// refreshes the token automatically when it has expired.
+api.interceptors.request.use(async (config) => {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default api;

@@ -1,18 +1,19 @@
 import express from 'express';
+import type { Request, Response } from 'express';
 import { verifyToken, getUserIdFromtoken } from '../commonFunctions.js';
 import { Product, Project, PvDetails, User } from '../db/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { generateAndSendPDF } from '../genrateDocument.js';
-import moment from 'moment/moment.js';
+import moment from 'moment';
 
 const router = express.Router();
 
 // Get All Projects API
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
     // Retrieve all projects from the database
     const user = getUserIdFromtoken(req);
-    const project = req.query.projectId;
+    const project = req.query.projectId as string | undefined;
     let projects;
     if (project) {
       projects = await Project.findOne({ user, id: project });
@@ -27,10 +28,10 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-router.post('/create', verifyToken, async (req, res) => {
+router.post('/create', verifyToken, async (req: Request, res: Response) => {
   try {
     // Extract project name from the request body
-    const { name } = req.body;
+    const { name } = req.body as { name: string };
     const user = getUserIdFromtoken(req);
     const existingProject = await Project.findOne({ name, user });
     if (existingProject) {
@@ -60,13 +61,13 @@ router.post('/create', verifyToken, async (req, res) => {
 });
 
 // Update Project API
-router.put('/update/:id', verifyToken, async (req, res) => {
+router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     // Extract project ID from the request parameters
     const { id } = req.params;
 
     // Extract updated project details from the request body
-    const { name } = req.body;
+    const { name } = req.body as { name: string };
     const user = getUserIdFromtoken(req);
 
     const haveAccess = await Project.findOne({ user, id });
@@ -82,7 +83,7 @@ router.put('/update/:id', verifyToken, async (req, res) => {
     // Update the project name using the updateOne method
     const result = await Project.updateOne({ id }, { $set: { name } });
 
-    if (result.n === 0) {
+    if (result.matchedCount === 0) {
       return res.status(404).json({ message: 'Project not found' });
     }
     res.json({
@@ -96,7 +97,7 @@ router.put('/update/:id', verifyToken, async (req, res) => {
 });
 
 // Delete Project API
-router.delete('/delete/:id', verifyToken, async (req, res) => {
+router.delete('/delete/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     // Extract project ID from the request parameters
     const { id } = req.params;
@@ -107,15 +108,12 @@ router.delete('/delete/:id', verifyToken, async (req, res) => {
     }
 
     // Delete the project by ID
-
-    const result = await Promise.all([
+    const [projectResult] = await Promise.all([
       Project.deleteOne({ id }),
       Product.deleteMany({ project: id }),
     ]);
 
-    // await Project.deleteOne({ id });
-
-    if (result.deletedCount === 0) {
+    if (projectResult.deletedCount === 0) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
@@ -127,12 +125,11 @@ router.delete('/delete/:id', verifyToken, async (req, res) => {
 });
 
 // Get PV data API
-router.get('/getPVData', verifyToken, async (req, res) => {
+router.get('/getPVData', verifyToken, async (req: Request, res: Response) => {
   try {
     // Retrieve all pvDetails from the database
-    // const user = getUserIdFromtoken(req);
-    const project = req.query.projectId;
-    const product = req.query.productId;
+    const project = req.query.projectId as string | undefined;
+    const product = req.query.productId as string | undefined;
     if (!project && !product) {
       return res.json({ message: 'Provide any one product or project id' });
     }
@@ -140,11 +137,9 @@ router.get('/getPVData', verifyToken, async (req, res) => {
       return res.json({ message: 'Provide any one product or project id' });
     }
     if (project) {
-      // await PvDetails.deleteMany();
       const pvDetails = await PvDetails.find({ project });
       return res.json(pvDetails);
     } else if (product) {
-      // await PvDetails.deleteMany();
       const pvDetails = await PvDetails.findOne({ product });
       return res.json(pvDetails);
     }
@@ -156,16 +151,12 @@ router.get('/getPVData', verifyToken, async (req, res) => {
 });
 
 // Get Generate data API
-router.get('/generateApi/:id', verifyToken, async (req, res) => {
+router.get('/generateApi/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     // Retrieve all pvDetails from the database
     const user = getUserIdFromtoken(req);
     const project = req.params.id;
-    let pvDetails;
-    if (project) {
-      // await PvDetails.deleteMany();
-      pvDetails = await PvDetails.find({ project, user }).lean();
-    }
+    const pvDetails = await PvDetails.find({ project, user }).lean();
     const projectDetails = await Project.findOne({ id: project }).lean();
     if (projectDetails?.isReportGeneratd) {
       return res.status(400).json({ message: 'Report already generated' });
@@ -187,8 +178,6 @@ router.get('/generateApi/:id', verifyToken, async (req, res) => {
           console.error('Error sending PDF:', error);
         });
     }
-
-    // res.json(pvDetails);
   } catch (error) {
     console.error('Error in get pv details API:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -196,19 +185,14 @@ router.get('/generateApi/:id', verifyToken, async (req, res) => {
 });
 
 // Get Generat Product data API
-router.get('/generateApi/product/:id', verifyToken, async (req, res) => {
+router.get('/generateApi/product/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     // Retrieve all pvDetails from the database
     const user = getUserIdFromtoken(req);
     const product = req.params.id;
-    let pvDetails;
-    if (product) {
-      // await PvDetails.deleteMany();
-      pvDetails = await PvDetails.find({ product, user }).lean();
-    }
+    const pvDetails = await PvDetails.find({ product, user }).lean();
     const productDetails = await Product.findOne({ id: product }).lean();
-    console.log(productDetails);
-    if (productDetails?.isReportGeneratd) {
+    if (productDetails?.isReportGeneratdProduct) {
       return res.status(400).json({ message: 'Report already generated' });
     }
     const userDetails = await User.findOne({ _id: user }).lean();
@@ -228,8 +212,6 @@ router.get('/generateApi/product/:id', verifyToken, async (req, res) => {
           console.error('Error sending PDF:', error);
         });
     }
-
-    // res.json(pvDetails);
   } catch (error) {
     console.error('Error in get pv details API:', error);
     res.status(500).json({ message: 'Internal server error' });

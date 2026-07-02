@@ -6,10 +6,18 @@ import {
   weathertoken,
   convertToDoubleDigit,
 } from './commonFunctions.js';
+import type { WeatherHistoryResponse } from './commonFunctions.js';
 import { Product, Project, PvDetails, User } from './db/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import moment from 'moment/moment.js';
+import moment from 'moment';
 import { generateAndSendPDF } from './genrateDocument.js';
+import type { IProduct } from './models/product.js';
+import type { PvHourEntry } from './models/pvDetails.js';
+import type mongoose from 'mongoose';
+
+/** A product as returned by Product.find().lean(). */
+type LeanProduct = IProduct & { _id: mongoose.Types.ObjectId };
+
 // Define the cron schedule to run every hour
 export const executeCorn = () => {
   cron.schedule('* * * * *', async () => {
@@ -22,7 +30,7 @@ export const executeCorn = () => {
       try {
         const data = await Product.find().lean();
         data?.map(async (productData) => {
-          const weatherResponse = await axios.get(
+          const weatherResponse = await axios.get<WeatherHistoryResponse>(
             'https://api.weatherbit.io/v2.0/history/hourly',
             {
               params: {
@@ -41,7 +49,13 @@ export const executeCorn = () => {
           const dateWithHours = `${fromDate}:${convertToDoubleDigit(
             currentdate.getHours()
           )}`;
-          const productPayload = {
+          const productPayload: {
+            id: string;
+            product: string;
+            project: string;
+            user: mongoose.Types.ObjectId;
+            hourWiseData: PvHourEntry[];
+          } = {
             id: uuidv4(),
             product: productData.id,
             project: productData.project,
@@ -50,7 +64,7 @@ export const executeCorn = () => {
           };
           if (
             !weatherResponse.data.data ||
-            !weatherResponse?.data?.data.length
+            !weatherResponse.data.data.length
           ) {
             console.error(
               'Issue with weather API',
@@ -59,7 +73,7 @@ export const executeCorn = () => {
             return 'Issue with weather API';
           }
 
-          const filteredData = await weatherResponse?.data?.data?.filter(
+          const filteredData = weatherResponse.data.data.filter(
             (weather) => weather?.datetime === dateWithHours
           );
           if (filteredData?.length) {
@@ -71,11 +85,11 @@ export const executeCorn = () => {
               opitionalSolarVal
             );
             const unixTimestamp = filteredData[0]?.ts;
-            const dateTs = new Date(unixTimestamp * 1000);
+            const dateTs = new Date((unixTimestamp ?? NaN) * 1000);
             // Hours part from the timestamp
             const hoursTs = dateTs.getHours();
             const powerPeak = (pvValue * 1000) / (hoursTs ?? opitionalSolarVal);
-            const finalObj = {
+            const finalObj: PvHourEntry = {
               dateAndTime: dateWithHours,
               pvValue: pvValue,
               powerPeak: powerPeak,
@@ -98,14 +112,14 @@ export const executeCorn = () => {
                 { id: pvData.id },
                 { $set: { hourWiseData: productPayload.hourWiseData } }
               );
-              if (res.n === 0) {
+              if (res.matchedCount === 0) {
                 console.log(
                   "calculation completed for the hour and it's updated"
                 );
               }
             } else {
               //Create
-              await productPayload.hourWiseData.push(finalObj);
+              productPayload.hourWiseData.push(finalObj);
               const pvDetailData = new PvDetails(productPayload);
               const res = await pvDetailData.save();
               if (res) {
@@ -128,22 +142,25 @@ export const executeCorn = () => {
   });
 };
 
-const autoGenrateReportFor30Days = async (productData) => {
+const autoGenrateReportFor30Days = async (productData: LeanProduct) => {
   const projectDetails = await Project.findOne({
     id: productData.project,
   }).lean();
-  if (projectDetails.createdDate && !projectDetails?.isReportGeneratd) {
-    //
-    const after30Days = await moment(projectDetails.createdDate)
+  if (projectDetails?.createdDate && !projectDetails.isReportGeneratd) {
+    const after30Days = moment(projectDetails.createdDate)
       .add(31, 'days')
       .format('YYYY-MM-DD');
-    const today = await moment().format('YYYY-MM-DD');
-    if (after30Days == today) {
+    const today = moment().format('YYYY-MM-DD');
+    if (after30Days === today) {
       const pvDetails = await PvDetails.find({
         project: productData.project,
         user: productData.user,
       }).lean();
       const userDetails = await User.findOne({ _id: productData.user }).lean();
+      if (!userDetails) {
+        console.error('User not found for 30-day report:', productData.user);
+        return;
+      }
       generateAndSendPDF(pvDetails, userDetails.email, projectDetails)
         .then(async () => {
           console.log('PDF sent successfully!');

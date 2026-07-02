@@ -1,18 +1,35 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import nodemailer from 'nodemailer';
+import type { SentMessageInfo } from 'nodemailer';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { Product } from './db/index.js';
-import {fromEmail} from './commonFunctions.js'
+import { fromEmail } from './commonFunctions.js';
+import type { PvHourEntry } from './models/pvDetails.js';
 
-export async function generateAndSendPDF(data, email, projectDetails) {
+/** The subset of a PvDetails record the report needs. */
+interface ReportPvData {
+  product: string;
+  hourWiseData: PvHourEntry[];
+}
+
+/** The subset of a project/product record the report needs. */
+interface ReportSubject {
+  name?: string;
+}
+
+export async function generateAndSendPDF(
+  data: ReportPvData[],
+  email: string,
+  projectDetails: ReportSubject | null | undefined
+): Promise<SentMessageInfo> {
   const doc = new PDFDocument();
 
   // Set up the PDF document
   doc.fontSize(16).text('PV Value Report', { align: 'center' });
-  
+
   // Generate the product details table
-  generateProductDetailsTable(doc, data, projectDetails);
+  await generateProductDetailsTable(doc, data, projectDetails);
 
   // Generate the total PV value
   const totalPVValue = calculateTotalPVValue(data);
@@ -23,9 +40,9 @@ export async function generateAndSendPDF(data, email, projectDetails) {
 
   // Generate and embed the chart image for each product
   for (const productData of data) {
-    const productdetails = await Product.findOne({id: productData.product}).lean();
+    const productdetails = await Product.findOne({ id: productData.product }).lean();
     const chartImage = await generateChartImage(productData.hourWiseData);
-    const page = doc.addPage()
+    const page = doc.addPage();
     page.fontSize(12).text(`Product name ${productdetails?.name}`);
     page.image(chartImage, { width: 500, height: 300, align: 'center' });
   }
@@ -40,16 +57,7 @@ export async function generateAndSendPDF(data, email, projectDetails) {
     host: 'localhost',
     port: 1025,
     ignoreTLS: true,
-    
   });
-
-  // const transporter = nodemailer.createTransport({
-  //   service: 'gmail',
-  //   auth: {
-  //     user: 'muruganvenkatesan55@gmail.com',
-  //     pass: 'Murugan@301998'
-  //   }
-  // });
 
   const mailOptions = {
     from: fromEmail,
@@ -58,12 +66,12 @@ export async function generateAndSendPDF(data, email, projectDetails) {
     text: `
     Dear recipient,
 
-    We are pleased to provide you with the PV Value Report. This report contains detailed information 
+    We are pleased to provide you with the PV Value Report. This report contains detailed information
     about the PV value of the products in your project.
 
     Please find the attached PDF file named "pv_report.pdf" that contains the report.
 
-    If you have any questions or require further assistance, please don't hesitate to reach out to us. 
+    If you have any questions or require further assistance, please don't hesitate to reach out to us.
     We are always here to help.
 
     Thank you for your attention, and we hope this report assists you in your project.
@@ -73,7 +81,7 @@ export async function generateAndSendPDF(data, email, projectDetails) {
     attachments: [{ filename: pdfPath, path: pdfPath }],
   };
 
-  return new Promise((resolve, reject) => {
+  return new Promise<SentMessageInfo>((resolve, reject) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         reject(error);
@@ -84,30 +92,33 @@ export async function generateAndSendPDF(data, email, projectDetails) {
   });
 }
 
-async function generateProductDetailsTable(doc, data, projectDetails) {
+async function generateProductDetailsTable(
+  doc: PDFKit.PDFDocument,
+  data: ReportPvData[],
+  projectDetails: ReportSubject | null | undefined
+) {
   doc.moveDown().fontSize(14).text('Product Details');
 
   // Table headers
-  await doc.moveDown();
-  await doc.fontSize(12).text('Project name', { width: 100, align: 'left' });
-  await doc.text('Product name', { width: 100, align: 'left' });
-  await doc.text('PV Value', { width: 100, align: 'left' });
+  doc.moveDown();
+  doc.fontSize(12).text('Project name', { width: 100, align: 'left' });
+  doc.text('Product name', { width: 100, align: 'left' });
+  doc.text('PV Value', { width: 100, align: 'left' });
 
   // Table rows
   for (const productData of data) {
-    const productdetails = await Product.findOne({id: productData.product}).lean();
-    await doc.moveDown();
-    await doc.fontSize(12).text(projectDetails?.name, { width: 100, align: 'left' });
-    await doc.text(productdetails?.name, { width: 100, align: 'left' });
+    const productdetails = await Product.findOne({ id: productData.product }).lean();
+    doc.moveDown();
+    doc.fontSize(12).text(projectDetails?.name ?? '', { width: 100, align: 'left' });
+    doc.text(productdetails?.name ?? '', { width: 100, align: 'left' });
     // Calculate and display the PV value for the product
 
-    const pvValue = await calculateTotalPVValue([productData]);
-    await doc.text(pvValue.toString(), { width: 100, align: 'left' });
+    const pvValue = calculateTotalPVValue([productData]);
+    doc.text(pvValue.toString(), { width: 100, align: 'left' });
   }
 }
 
-  
-function calculateTotalPVValue(data) {
+function calculateTotalPVValue(data: ReportPvData[]): number {
   let totalPVValue = 0;
   for (const productData of data) {
     for (const entry of productData.hourWiseData) {
@@ -117,7 +128,7 @@ function calculateTotalPVValue(data) {
   return totalPVValue;
 }
 
-async function generateChartImage(hourWiseData) {
+async function generateChartImage(hourWiseData: PvHourEntry[]): Promise<Buffer> {
   const width = 800;
   const height = 400;
 
@@ -127,7 +138,7 @@ async function generateChartImage(hourWiseData) {
 
   // Set up Chart.js configuration
   const configuration = {
-    type: 'bar',
+    type: 'bar' as const,
     data: {
       labels: labels,
       datasets: [
@@ -158,8 +169,10 @@ async function generateChartImage(hourWiseData) {
     },
   };
 
-  // Set up the chart canvas
-  const chartCallback = (ChartJS) => {
+  // Set up the chart canvas. The callback targets the Chart.js v2 global
+  // defaults API and no-ops (with a log) on v3+, so it is typed loosely.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartCallback = (ChartJS: any) => {
     if (!ChartJS?.defaults?.global) {
       console.log('ChartJS', ChartJS?.defaults);
       return;
@@ -167,7 +180,7 @@ async function generateChartImage(hourWiseData) {
     ChartJS.defaults.global.defaultFontFamily = 'Arial';
     ChartJS.defaults.global.defaultFontSize = 16;
     ChartJS.plugins.register({
-      beforeDraw: (chart) => {
+      beforeDraw: (chart: any) => {
         const ctx = chart.canvas.getContext('2d');
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, chart.width, chart.height);
@@ -178,7 +191,3 @@ async function generateChartImage(hourWiseData) {
   const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback });
   return chartJSNodeCanvas.renderToBuffer(configuration);
 }
-
-
-
-  

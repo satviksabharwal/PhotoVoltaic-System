@@ -9,6 +9,7 @@ import Page404 from "./pages/Page404";
 import DashboardAppPage from "./pages/DashboardAppPage";
 import ProfileSetting from "./pages/ProfileSetting";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ProjectPage from "./pages/ProjectPage";
 import ProductPage from "./pages/ProductPage";
 import ProductVisualization from "./pages/ProductVisualization";
@@ -40,6 +41,10 @@ export default function Router() {
     {
       path: "forgotpassword",
       element: <ForgotPassword />,
+    },
+    {
+      path: "reset-password",
+      element: <ResetPassword />,
     },
     {
       element: <SimpleLayout />,

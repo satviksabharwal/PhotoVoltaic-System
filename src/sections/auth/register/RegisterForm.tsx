@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AxiosError, AxiosResponse } from 'axios';
-import api from '../../../utils/api';
+import { supabase } from '../../../utils/supabase';
 // sections
 import AuthField, { SubmitButton } from '../AuthField';
 import PrivacyModal from '../PrivacyModal';
@@ -18,14 +17,6 @@ interface RegisterFormFields {
   email: string;
   password: string;
   confirmPassword: string;
-}
-
-interface RegisterResponse {
-  message?: string;
-}
-
-interface ErrorResponse {
-  error?: string;
 }
 
 const defaultFormFields: RegisterFormFields = { displayName: '', email: '', password: '', confirmPassword: '' };
@@ -74,17 +65,29 @@ export default function RegisterForm() {
       return;
     }
     try {
-      const url = '/user';
-      await api.post<RegisterResponse>(url, { displayName, email, password }).then(
-        (response: AxiosResponse<RegisterResponse>) => {
-          toast.success(response.data.message);
-          resetFormFields();
-          navigate('/login', { replace: true });
+      // display_name lands in user_metadata; a database trigger copies it
+      // into the profiles table on signup.
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: displayName },
+          emailRedirectTo: `${window.location.origin}/login`,
         },
-        (error: AxiosError<ErrorResponse>) => {
-          toast.error(error.response?.data?.error);
-        }
-      );
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      // With email confirmation enabled (Supabase default) there is no
+      // session yet — the user must click the link in their inbox first.
+      if (data.session) {
+        toast.success('Signup successful!');
+      } else {
+        toast.success('Almost there — check your email to confirm your account, then sign in.');
+      }
+      resetFormFields();
+      navigate('/login', { replace: true });
     } catch (error) {
       toast.error(`${error}`);
     }
