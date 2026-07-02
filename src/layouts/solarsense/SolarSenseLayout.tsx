@@ -5,9 +5,9 @@ import { solar, solarApp } from '../../theme/solar';
 import AccountPopover from '../dashboard/header/AccountPopover';
 
 // ----------------------------------------------------------------------
-// SolarSense app shell: slim white top bar (wordmark left, language + avatar
-// right) over the warm page background — no sidebar. Redesigned pages render
-// into the Outlet; content sets its own max-width.
+// SolarSense app shell: slim white top bar (wordmark left, avatar right)
+// over the warm page background — no sidebar. Redesigned pages render into
+// the Outlet; content sets its own max-width.
 // ----------------------------------------------------------------------
 
 export default function SolarSenseLayout() {
@@ -47,31 +47,7 @@ export default function SolarSenseLayout() {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <Box
-            component="button"
-            type="button"
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              height: 38,
-              px: '14px',
-              borderRadius: '10px',
-              border: `1px solid ${solarApp.chipBorder}`,
-              background: '#fff',
-              fontSize: '13.5px',
-              fontWeight: 600,
-              fontFamily: solar.fontBody,
-              color: solar.fieldLabel,
-              cursor: 'pointer',
-              '&:hover': { background: solarApp.chipHover },
-            }}
-          >
-            EN ⌄
-          </Box>
-          <AccountPopover />
-        </Box>
+        <AccountPopover />
       </Box>
 
       <Box component="main" sx={{ p: { xs: '28px 20px 48px', md: '36px 56px 56px' } }}>

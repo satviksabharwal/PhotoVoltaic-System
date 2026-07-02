@@ -85,16 +85,32 @@ export async function fetchCurrentGti(panel: PanelConfig): Promise<number | null
   }
 }
 
+interface PvgisMonthlyEntry {
+  month?: number;
+  E_m?: number;
+}
+
 interface PvgisResponse {
-  outputs?: { totals?: { fixed?: { E_y?: number } } };
+  outputs?: {
+    totals?: { fixed?: { E_y?: number } };
+    monthly?: { fixed?: PvgisMonthlyEntry[] };
+  };
+}
+
+export interface PvgisEstimate {
+  /** Yearly production estimate in kWh. */
+  annualKwh: number;
+  /** Production estimate per calendar month (Jan–Dec), in kWh. */
+  monthlyKwh: number[];
 }
 
 /**
- * Fetches the yearly production estimate (kWh) from PVGIS for this panel
- * configuration. Returns null when PVGIS is unreachable — callers store the
- * estimate best-effort.
+ * Fetches the production estimate from PVGIS for this panel configuration:
+ * the yearly total plus the 12 per-month values (for the monthly output
+ * chart). Returns null when PVGIS is unreachable — callers treat the
+ * estimate as best-effort.
  */
-export async function fetchPvgisAnnualKwh(panel: PanelConfig): Promise<number | null> {
+export async function fetchPvgisEstimate(panel: PanelConfig): Promise<PvgisEstimate | null> {
   const peakpower = capacityKwp(panel.area, panel.module);
   if (peakpower <= 0) return null;
   try {
@@ -111,7 +127,15 @@ export async function fetchPvgisAnnualKwh(panel: PanelConfig): Promise<number | 
         outputformat: 'json',
       },
     });
-    return response.data.outputs?.totals?.fixed?.E_y ?? null;
+    const { outputs } = response.data;
+    const annualKwh = outputs?.totals?.fixed?.E_y;
+    if (annualKwh == null) return null;
+    const monthlyEntries = outputs?.monthly?.fixed ?? [];
+    const monthlyKwh = Array.from({ length: 12 }, (_, index) => {
+      const entry = monthlyEntries.find((item) => item.month === index + 1);
+      return entry?.E_m ?? 0;
+    });
+    return { annualKwh, monthlyKwh };
   } catch (error) {
     console.error('PVGIS request failed:', error instanceof Error ? error.message : error);
     return null;

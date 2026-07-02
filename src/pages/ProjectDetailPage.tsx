@@ -10,6 +10,8 @@ import api from '../utils/api';
 import AuthField, { SubmitButton } from '../sections/auth/AuthField';
 import MapCard, { MapFocus } from '../sections/projects/detail/MapCard';
 import AddSiteForm from '../sections/projects/detail/AddSiteForm';
+import InstantEstimateCard from '../sections/projects/detail/InstantEstimateCard';
+import { DEFAULT_SITE_FORM, SiteFormState, siteFormFromProduct } from '../sections/projects/detail/siteFormState';
 import SitesTable, { siteCapacityKwp } from '../sections/projects/detail/SitesTable';
 import { solar, solarApp } from '../theme/solar';
 import { Product, Project } from '../types/models';
@@ -59,6 +61,9 @@ export default function ProjectDetailPage() {
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
   const [locationName, setLocationName] = useState<string>('');
+  // Panel configuration is page state (not form state) so the Instant
+  // Estimate card in the left column renders live from the same values.
+  const [siteForm, setSiteForm] = useState<SiteFormState>(DEFAULT_SITE_FORM);
   const [mapFocus, setMapFocus] = useState<MapFocus | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [renameOpen, setRenameOpen] = useState<boolean>(false);
@@ -123,9 +128,14 @@ export default function ProjectDetailPage() {
     );
   };
 
+  const patchSiteForm = (patch: Partial<SiteFormState>) => {
+    setSiteForm((previous) => ({ ...previous, ...patch }));
+  };
+
   const startEdit = (site: Product) => {
     setEditing(site);
     setLocationName(site.name);
+    setSiteForm(siteFormFromProduct(site));
     setCoords(site.latitude, site.longitude);
     focusMap(site.latitude, site.longitude);
   };
@@ -135,6 +145,7 @@ export default function ProjectDetailPage() {
     setLocationName('');
     setLat('');
     setLng('');
+    setSiteForm(DEFAULT_SITE_FORM);
   };
 
   const handleSiteSaved = async () => {
@@ -402,16 +413,20 @@ export default function ProjectDetailPage() {
           </Box>
         )}
 
-        {/* Map + form grid */}
+        {/* Map + estimate | form grid. Stretch lets the left column match the
+            form's height, with the estimate card absorbing the difference. */}
         <Box
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: '1.55fr 1fr' },
             gap: '22px',
-            alignItems: 'start',
+            alignItems: 'stretch',
           }}
         >
-          <MapCard sites={sites} pin={pin} onPin={setCoords} focus={mapFocus} onGeocoded={handleGeocoded} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '22px', minWidth: 0 }}>
+            <MapCard sites={sites} pin={pin} onPin={setCoords} focus={mapFocus} onGeocoded={handleGeocoded} />
+            <InstantEstimateCard lat={lat} lng={lng} form={siteForm} />
+          </Box>
           <AddSiteForm
             projectId={projectId}
             locationName={locationName}
@@ -421,6 +436,8 @@ export default function ProjectDetailPage() {
             onLatChange={setLat}
             onLngChange={setLng}
             onUseMyLocation={handleUseMyLocation}
+            form={siteForm}
+            onFormChange={patchSiteForm}
             editing={editing}
             onCancelEdit={clearSiteForm}
             onSaved={handleSiteSaved}

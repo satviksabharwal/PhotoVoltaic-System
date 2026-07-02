@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { verifyToken, getUserIdFromtoken } from '../commonFunctions.js';
 import { supabaseAdmin } from '../supabaseAdmin.js';
 import { toLegacyProduct } from '../mappers.js';
-import { capacityKwp, fetchCurrentGti, fetchPvgisAnnualKwh, hourlyEnergyKwh } from '../solar.js';
+import { capacityKwp, fetchCurrentGti, fetchPvgisEstimate, hourlyEnergyKwh } from '../solar.js';
 import type { PanelConfig } from '../solar.js';
 import type { PanelOrientation, ProductRow } from '../types.js';
 
@@ -93,7 +93,7 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
     // Current-hour irradiance + authoritative annual estimate, in parallel.
     // Both are best-effort: a flaky data source never blocks saving the site.
     const panel = toPanelConfig(body);
-    const [gti, estAnnualKwh] = await Promise.all([fetchCurrentGti(panel), fetchPvgisAnnualKwh(panel)]);
+    const [gti, pvgisEstimate] = await Promise.all([fetchCurrentGti(panel), fetchPvgisEstimate(panel)]);
     const pvValue = gti != null ? hourlyEnergyKwh(panel, gti) : null;
 
     const { data: inserted, error: insertError } = await supabaseAdmin
@@ -126,7 +126,7 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       throw insertError;
     }
 
-    await storeAnnualEstimate((inserted as ProductRow).id, estAnnualKwh);
+    await storeAnnualEstimate((inserted as ProductRow).id, pvgisEstimate?.annualKwh ?? null);
     await touchProject(project);
     res.json({ message: 'Product created successfully' });
   } catch (error) {
@@ -225,8 +225,8 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
-    const estAnnualKwh = await fetchPvgisAnnualKwh(panel);
-    await storeAnnualEstimate(id, estAnnualKwh);
+    const pvgisEstimate = await fetchPvgisEstimate(panel);
+    await storeAnnualEstimate(id, pvgisEstimate?.annualKwh ?? null);
     await touchProject((data[0] as ProductRow).project_id);
     res.json({ message: 'Product updated successfully' });
   } catch (error) {

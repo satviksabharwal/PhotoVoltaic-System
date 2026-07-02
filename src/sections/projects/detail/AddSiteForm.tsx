@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { toast } from 'react-toastify';
 import api from '../../../utils/api';
 import AuthField, { SubmitButton } from '../../auth/AuthField';
 import { solar, solarApp } from '../../../theme/solar';
-import { ModuleType, MountingType, PanelOrientation, Product } from '../../../types/models';
-import { estimateOutput, optimalTilt } from '../../../utils/solarEstimate';
+import { Product } from '../../../types/models';
+import { optimalTilt } from '../../../utils/solarEstimate';
+import InfoTip from './InfoTip';
+import { SiteFormState } from './siteFormState';
 
 // ----------------------------------------------------------------------
 // "Add a site" form card: location + coordinates, orientation segments,
-// tilt slider, area, collapsible advanced options and the live instant
-// estimate. Doubles as the edit form when `editing` is set.
+// tilt slider, area and collapsible advanced options. The panel state lives
+// on ProjectDetailPage so the Instant Estimate card can share it. Doubles
+// as the edit form when `editing` is set.
 // ----------------------------------------------------------------------
 
 interface AddSiteFormProps {
@@ -22,6 +25,8 @@ interface AddSiteFormProps {
   onLatChange: (value: string) => void;
   onLngChange: (value: string) => void;
   onUseMyLocation: () => void;
+  form: SiteFormState;
+  onFormChange: (patch: Partial<SiteFormState>) => void;
   editing: Product | null;
   onCancelEdit: () => void;
   onSaved: () => void;
@@ -85,56 +90,16 @@ export default function AddSiteForm({
   onLatChange,
   onLngChange,
   onUseMyLocation,
+  form,
+  onFormChange,
   editing,
   onCancelEdit,
   onSaved,
 }: AddSiteFormProps) {
-  const [orientation, setOrientation] = useState<PanelOrientation>('S');
-  const [tilt, setTilt] = useState<number>(35);
-  const [area, setArea] = useState<string>('');
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
-  const [module, setModule] = useState<ModuleType>('mono');
-  const [mounting, setMounting] = useState<MountingType>('roof');
-  const [losses, setLosses] = useState<string>('14');
-  const [tariff, setTariff] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
 
-  // Populate panel settings when a site is opened for editing (the parent
-  // sets location/lat/lng).
-  useEffect(() => {
-    if (editing) {
-      setOrientation(editing.orientation);
-      setTilt(editing.inclination);
-      setArea(String(editing.area));
-      setModule(editing.module ?? 'mono');
-      setMounting(editing.mounting ?? 'roof');
-      setLosses(String(editing.losses ?? 14));
-      setTariff(editing.tariff != null ? String(editing.tariff) : '');
-    }
-  }, [editing]);
-
-  const resetForm = () => {
-    setOrientation('S');
-    setTilt(35);
-    setArea('');
-    setModule('mono');
-    setMounting('roof');
-    setLosses('14');
-    setTariff('');
-  };
-
   const latNumber = parseFloat(lat);
-  const estimate = estimateOutput({
-    area: parseFloat(area) || 0,
-    lat: Number.isNaN(latNumber) ? undefined : latNumber,
-    orientation,
-    tilt,
-    module,
-    mounting,
-    losses: parseFloat(losses) || 0,
-    tariff: tariff.trim() ? parseFloat(tariff) : null,
-  });
-
   const tiltHelper = !Number.isNaN(latNumber)
     ? `Optimal for this latitude is about ${optimalTilt(latNumber)}°`
     : 'Set a location for a tilt recommendation';
@@ -151,21 +116,20 @@ export default function AddSiteForm({
     try {
       const payload = {
         name: locationName,
-        orientation,
-        inclination: tilt,
-        area: parseFloat(area),
+        orientation: form.orientation,
+        inclination: form.tilt,
+        area: parseFloat(form.area),
         latitude,
         longitude,
-        module,
-        mounting,
-        losses: parseFloat(losses) || 0,
-        ...(tariff.trim() ? { tariff: parseFloat(tariff) } : {}),
+        module: form.module,
+        mounting: form.mounting,
+        losses: parseFloat(form.losses) || 0,
+        ...(form.tariff.trim() ? { tariff: parseFloat(form.tariff) } : {}),
       };
       const response = editing
         ? await api.put(`/product/update/${editing.id}`, payload)
         : await api.post('/product/create', { ...payload, project: projectId });
       toast.success(response.data.message);
-      resetForm();
       onSaved();
     } catch (error) {
       const message =
@@ -250,8 +214,8 @@ export default function AddSiteForm({
                 { value: 'S', label: 'S' },
                 { value: 'W', label: 'W' },
               ]}
-              value={orientation}
-              onChange={setOrientation}
+              value={form.orientation}
+              onChange={(orientation) => onFormChange({ orientation })}
             />
             <Typography sx={{ fontSize: '12px', color: solarApp.label, mt: '4px' }}>
               Tip:{' '}
@@ -266,7 +230,7 @@ export default function AddSiteForm({
             <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
               <FieldLabel>Tilt / inclination</FieldLabel>
               <Box sx={{ fontFamily: solar.fontDisplay, fontSize: '15px', fontWeight: 700, color: solar.ink }}>
-                {tilt}°
+                {form.tilt}°
               </Box>
             </Box>
             <Box
@@ -274,8 +238,8 @@ export default function AddSiteForm({
               type="range"
               min={0}
               max={90}
-              value={tilt}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setTilt(+event.target.value)}
+              value={form.tilt}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onFormChange({ tilt: +event.target.value })}
               sx={{ width: '100%', accentColor: solar.accent, m: '8px 0 2px', cursor: 'pointer' }}
             />
             <Typography sx={{ fontSize: '12px', color: solarApp.label }}>{tiltHelper}</Typography>
@@ -289,8 +253,8 @@ export default function AddSiteForm({
             required
             min={1}
             step="any"
-            value={area}
-            onChange={(event) => setArea(event.target.value)}
+            value={form.area}
+            onChange={(event) => onFormChange({ area: event.target.value })}
           />
         </Box>
 
@@ -334,8 +298,8 @@ export default function AddSiteForm({
                   { value: 'poly', label: 'Poly' },
                   { value: 'thin', label: 'Thin-film' },
                 ]}
-                value={module}
-                onChange={setModule}
+                value={form.module}
+                onChange={(module) => onFormChange({ module })}
               />
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -346,21 +310,35 @@ export default function AddSiteForm({
                   { value: 'ground', label: 'Ground' },
                   { value: 'track', label: 'Tracker' },
                 ]}
-                value={mounting}
-                onChange={setMounting}
+                value={form.mounting}
+                onChange={(mounting) => onFormChange({ mounting })}
               />
             </Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <AuthField
-                label="System losses (%)"
+                label={
+                  <>
+                    System losses (%)
+                    <InfoTip
+                      ariaLabel="What are system losses?"
+                      tip={
+                        <>
+                          All the real-world losses between sunlight and usable power — heat, inverter, wiring,
+                          soiling, and mismatch. <b>14%</b> is a typical default; lower it for a clean,
+                          well-ventilated install.
+                        </>
+                      }
+                    />
+                  </>
+                }
                 name="losses"
                 type="number"
                 placeholder="14"
                 min={0}
                 max={99}
                 step="any"
-                value={losses}
-                onChange={(event) => setLosses(event.target.value)}
+                value={form.losses}
+                onChange={(event) => onFormChange({ losses: event.target.value })}
               />
               <AuthField
                 label="Tariff (€/kWh)"
@@ -369,83 +347,12 @@ export default function AddSiteForm({
                 placeholder="0.30"
                 min={0}
                 step="any"
-                value={tariff}
-                onChange={(event) => setTariff(event.target.value)}
+                value={form.tariff}
+                onChange={(event) => onFormChange({ tariff: event.target.value })}
               />
             </Box>
           </Box>
         )}
-
-        {/* Instant estimate */}
-        <Box
-          sx={{
-            background: estimate ? 'linear-gradient(135deg, #FFF6DC, #FFFDF7)' : '#FAF8F3',
-            border: `1px ${estimate ? 'solid #F4E4A6' : `dashed ${solarApp.cardBorder}`}`,
-            borderRadius: '14px',
-            p: '18px',
-            mt: '18px',
-          }}
-        >
-          {estimate ? (
-            <>
-              <Typography
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  color: solar.accentDeep,
-                  m: '0 0 12px',
-                }}
-              >
-                ⚡ Instant estimate
-              </Typography>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                {[
-                  { value: estimate.kwp.toFixed(1), unit: 'kWp', label: 'System size' },
-                  { value: Math.round(estimate.annualKwh).toLocaleString('en-US'), unit: 'kWh/yr', label: 'Est. output' },
-                  ...(estimate.savings != null
-                    ? [{ value: `€${Math.round(estimate.savings).toLocaleString('en-US')}`, unit: '', label: 'Yearly savings' }]
-                    : []),
-                  { value: estimate.co2Tonnes.toFixed(1), unit: 't', label: 'CO₂ avoided / yr' },
-                ].map((cell) => (
-                  <Box key={cell.label}>
-                    <Box sx={{ fontFamily: solar.fontDisplay, fontSize: '24px', fontWeight: 700, color: solar.ink, lineHeight: 1.05 }}>
-                      {cell.value}{' '}
-                      {cell.unit && (
-                        <Box component="small" sx={{ fontSize: '13px', fontWeight: 600, color: solar.muted }}>
-                          {cell.unit}
-                        </Box>
-                      )}
-                    </Box>
-                    <Box
-                      sx={{
-                        fontSize: '11.5px',
-                        fontWeight: 600,
-                        letterSpacing: '0.02em',
-                        textTransform: 'uppercase',
-                        color: solarApp.label,
-                        mt: '3px',
-                      }}
-                    >
-                      {cell.label}
-                    </Box>
-                  </Box>
-                ))}
-              </Box>
-              <Typography sx={{ fontSize: '11.5px', color: '#B0A88F', m: '12px 0 0', lineHeight: 1.4 }}>
-                Rough estimate from location, tilt & orientation. Submit to run the full hourly simulation.
-              </Typography>
-            </>
-          ) : (
-            <Typography sx={{ fontSize: '13.5px', color: solarApp.chipCount, lineHeight: 1.5, m: 0 }}>
-              Enter an <b>area</b> and pin a location to see an instant output estimate here — before you even submit.
-            </Typography>
-          )}
-        </Box>
 
         <SubmitButton type="submit" disabled={saving} style={saving ? { opacity: 0.7, cursor: 'wait' } : undefined}>
           {saving ? 'Saving…' : editing ? 'Save changes' : '＋ Add site to project'}
@@ -454,10 +361,7 @@ export default function AddSiteForm({
           <Box
             component="button"
             type="button"
-            onClick={() => {
-              resetForm();
-              onCancelEdit();
-            }}
+            onClick={onCancelEdit}
             sx={{
               width: '100%',
               height: 46,

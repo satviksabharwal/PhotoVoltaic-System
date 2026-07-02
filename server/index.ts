@@ -6,6 +6,7 @@ import fs from 'fs';
 import userRoutes from './routes/user.js';
 import projectRoutes from './routes/project.js';
 import productRoutes from './routes/product.js';
+import solarRoutes from './routes/solar.js';
 import { executeCorn } from './cornCalculatePS.js';
 
 const rawData = fs.readFileSync('./swagger.json');
@@ -31,6 +32,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/project', projectRoutes);
 
 app.use('/api/product', productRoutes);
+
+app.use('/api/solar', solarRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

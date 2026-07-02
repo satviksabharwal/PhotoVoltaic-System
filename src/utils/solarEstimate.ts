@@ -47,6 +47,24 @@ export interface Estimate {
   optTilt: number;
 }
 
+/** Relative monthly yield weights for the northern hemisphere (Jan–Dec). */
+const MONTH_WEIGHTS = [4, 5, 8, 10, 12, 13, 13, 11, 9, 6, 4, 3];
+
+/**
+ * Splits an annual estimate into 12 monthly values (Jan–Dec) using a seasonal
+ * curve, shifted by six months in the southern hemisphere. A coarse
+ * approximation — the estimate card swaps in real PVGIS monthly numbers once
+ * they arrive.
+ */
+export function monthlyDistribution(annualKwh: number, lat?: number): number[] {
+  const total = MONTH_WEIGHTS.reduce((sum, weight) => sum + weight, 0);
+  const southern = (lat ?? 0) < 0;
+  return MONTH_WEIGHTS.map((_, index) => {
+    const weight = MONTH_WEIGHTS[southern ? (index + 6) % 12 : index];
+    return (annualKwh * weight) / total;
+  });
+}
+
 export function estimateOutput(input: EstimateInput): Estimate | null {
   if (!input.area || input.area <= 0) return null;
 

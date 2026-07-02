@@ -37,7 +37,8 @@ const Input = styled('input')({
 });
 
 interface AuthFieldProps {
-  label: string;
+  /** Label text, optionally with inline extras such as an info tooltip. */
+  label: React.ReactNode;
   name: string;
   type?: string;
   placeholder?: string;
