@@ -219,18 +219,6 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleGenerateReport = async () => {
-    try {
-      await api.get(`/project/generateApi/${projectId}`);
-      toast.success('Report generated and sent to your email');
-      fetchProject();
-    } catch (error) {
-      const message =
-        (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? String(error);
-      toast.error(message);
-    }
-  };
-
   const totals = useMemo(
     () => ({
       count: sites.length,
@@ -240,7 +228,6 @@ export default function ProjectDetailPage() {
   );
 
   const active = project?.active ?? true;
-  const reportGenerated = Boolean(project?.isReportGeneratd);
 
   return (
     <>
@@ -343,32 +330,6 @@ export default function ProjectDetailPage() {
                 }}
               />
               {active ? 'Active' : 'Inactive'}
-            </Box>
-            <Box
-              component="button"
-              type="button"
-              onClick={handleGenerateReport}
-              disabled={reportGenerated}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '9px',
-                height: 44,
-                px: '20px',
-                border: 'none',
-                borderRadius: '12px',
-                background: reportGenerated ? '#B8B2A4' : solar.ink,
-                color: '#fff',
-                fontFamily: solar.fontDisplay,
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: reportGenerated ? 'default' : 'pointer',
-                transition: 'filter .15s',
-                '&:hover': { filter: reportGenerated ? 'none' : 'brightness(1.15)' },
-              }}
-            >
-              <span>⇤</span>
-              {reportGenerated ? 'Report generated' : 'Generate report'}
             </Box>
           </Box>
         </Box>

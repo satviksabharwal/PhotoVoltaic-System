@@ -10,18 +10,15 @@ import { solar, solarApp } from '../../../theme/solar';
 import { Product } from '../../../types/models';
 
 // Bundlers rewrite leaflet's default icon asset paths; point them at the
-// imported files so markers render.
+// imported files so markers render. Deleting _getIconUrl disables Leaflet's
+// CSS-based path auto-detection, which under Vite prepends a broken prefix
+// to these URLs.
+delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
   shadowUrl: markerShadow,
 });
-
-// ----------------------------------------------------------------------
-// Map card: header with place search (Nominatim, Enter to run), a Leaflet
-// map (click anywhere to drop the new-site pin, existing sites as markers)
-// and a bottom-left status pill.
-// ----------------------------------------------------------------------
 
 export interface MapFocus {
   lat: number;
