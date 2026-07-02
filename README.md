@@ -4,6 +4,10 @@
 
 SolarSense estimates and tracks photovoltaic output for any location on Earth. Pin a roof on the map, describe the panels, and get an instant production estimate backed by real satellite-derived solar data — then watch the site build up its own hourly production history and homeowner-friendly insights.
 
+![Sign in](docs/screenshots/login.png)
+
+![Create your account](docs/screenshots/register.png)
+
 ---
 
 ## The story
@@ -34,11 +38,15 @@ In 2026 I revisited it and rebuilt it end to end into **SolarSense (v2)**: a com
 - **Automatic location labels** rolled up from each project's sites: same city → *Munich · Germany*, same state → *Bavaria · Germany*, same country → *Germany*, spread out → *3 countries* (no manual typing — sites are reverse-geocoded when saved)
 - Filter chips (All / Active / Inactive); a project activates itself when its first site is added
 
+![Projects](docs/screenshots/projects.png)
+
 ### 📍 Project detail — plan a site
 - **Interactive Leaflet map**: click to drop a pin or search any place (OpenStreetMap Nominatim)
 - Add-site form: orientation (N/E/S/W), tilt slider with a **latitude-based recommendation**, area, module type (mono/poly/thin-film), mounting (roof/ground/tracker), system losses (with an explainer tooltip) and electricity tariff
 - **Instant Estimate card** — updates on every keystroke: system size (kWp), yearly output, yearly savings (€), CO₂ avoided, plus a **12-month output chart**. Numbers appear instantly from a client-side model, then quietly refine to **real PVGIS simulation data** once you stop typing ("Source: PVGIS")
 - Sites table with per-site capacity and estimated annual output; designed empty states for brand-new projects
+
+![Project detail](docs/screenshots/project-detail.png)
 
 ### 📊 Insights — per site, homeowner-first
 - Period switcher (Today / This week / Month / All) — one fetch, instant switching
@@ -46,6 +54,8 @@ In 2026 I revisited it and rebuilt it end to end into **SolarSense (v2)**: a com
 - **Sunshine fingerprint**: a heatmap of every recorded hour (one row per day, brighter = more energy) that makes the daily sun arc and weather differences visible at a glance, with a computed peak-production window ("Peak lands around 12–2pm — run the dishwasher then")
 - CO₂ equivalence chips (trees planted · km not driven · phone charges)
 - Graceful **cold-start state** while the first 24 hourly readings are collected
+
+![Insights](docs/screenshots/insights.png)
 
 ### ⚙️ Under the hood
 - An **hourly cron** records every site's actual panel-plane irradiance and computed energy — data collection starts the moment a site is created
