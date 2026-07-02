@@ -22,6 +22,10 @@
   <!-- SolarSense auth fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <!-- Auth hero photo: fetch alongside the JS bundle so the login/register
+       background is already cached when React renders -->
+  <link rel="preload" as="image" href="/assets/images/hero-background.jpg" fetchpriority="high">
+
   <title>SolarSense</title>
 </head>
 

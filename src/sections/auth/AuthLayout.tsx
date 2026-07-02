@@ -3,15 +3,9 @@ import { Box, Typography } from '@mui/material';
 import SolarMark from './SolarMark';
 import { solar, solarBg } from './tokens';
 
-// ----------------------------------------------------------------------
-// Shared SolarSense auth shell: full-bleed "solar dusk" background + scrim,
-// top-left wordmark, bottom-left tagline, and a right-offset floating card.
-// `children` is rendered inside the card (heading, subtitle, form).
-// ----------------------------------------------------------------------
-
-// Full-bleed hero photo (served from /public). The space in the filename is
-// URL-encoded so the browser resolves it reliably.
-const HERO_BG = '/assets/images/hero%20background.jpg';
+// Full-bleed hero photo (served from /public). Preloaded from index.html so
+// it arrives together with the app bundle — keep both paths in sync.
+const HERO_BG = '/assets/images/hero-background.jpg';
 
 interface AuthLayoutProps {
   taglineHeading: ReactNode;
