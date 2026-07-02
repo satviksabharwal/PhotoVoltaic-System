@@ -16,8 +16,6 @@ export interface ProjectRow {
   name: string;
   report_generated: boolean;
   created_at: string;
-  // Added by the solarsense_fields migration.
-  location?: string | null;
   active?: boolean;
   updated_at?: string;
 }
@@ -36,14 +34,15 @@ export interface ProductRow {
   power_peak: number | null;
   report_generated: boolean;
   created_at: string;
-  // Added by the solarsense_fields migration.
   module_type?: 'mono' | 'poly' | 'thin';
   mounting?: 'roof' | 'ground' | 'track';
   losses_pct?: number;
   tariff?: number | null;
   kwp?: number | null;
-  // Added by the product_annual_estimate migration (PVGIS yearly kWh).
   est_annual_kwh?: number | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
 }
 
 export interface PvReadingRow {

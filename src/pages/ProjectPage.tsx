@@ -31,7 +31,6 @@ export default function ProjectPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
-  const [location, setLocation] = useState<string>('');
 
   const fetchProjects = async () => {
     try {
@@ -68,16 +67,12 @@ export default function ProjectPage() {
   const closeCreate = () => {
     setCreateOpen(false);
     setName('');
-    setLocation('');
   };
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const response = await api.post('/project/create', {
-        name,
-        ...(location.trim() ? { location: location.trim() } : {}),
-      });
+      const response = await api.post('/project/create', { name });
       toast.success(response.data.message);
       closeCreate();
       fetchProjects();
@@ -280,26 +275,17 @@ export default function ProjectPage() {
             Create new project
           </Typography>
           <Typography sx={{ fontSize: '14px', color: solar.sub, mt: '6px', mb: '22px' }}>
-            Give it a name and, optionally, the location it covers.
+            Give it a name — the location fills in automatically from its sites.
           </Typography>
           <form onSubmit={handleCreate}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <AuthField
-                label="Project name"
-                name="projectName"
-                placeholder="e.g. Kraków Fields"
-                required
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-              <AuthField
-                label="Location (optional)"
-                name="projectLocation"
-                placeholder="e.g. Poland · Kraków"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-              />
-            </Box>
+            <AuthField
+              label="Project name"
+              name="projectName"
+              placeholder="e.g. Kraków Fields"
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
             <SubmitButton type="submit">Create project</SubmitButton>
           </form>
         </Box>

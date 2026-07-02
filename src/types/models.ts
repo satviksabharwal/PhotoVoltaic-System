@@ -19,8 +19,11 @@ export interface Project {
   name: string;
   isReportGeneratd?: boolean;
   createdDate?: string;
-  /** Free-text place label, e.g. "Poland · Kraków". */
-  location?: string | null;
+  /**
+   * Location rolled up from the project's sites by the list endpoint
+   * (city → state → country → "N countries").
+   */
+  autoLocation?: string | null;
   active?: boolean;
   updatedAt?: string;
   /** Card aggregates computed by the list endpoint. */

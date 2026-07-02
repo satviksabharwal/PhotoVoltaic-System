@@ -13,6 +13,32 @@ const UNIQUE_VIOLATION = '23505';
 /** Fallback Wp/m² (mono) for products saved before kwp existed. */
 const FALLBACK_WP_PER_M2 = 205;
 
+/**
+ * Rolls a project's sites up to the most specific place they all share:
+ * one city → "City · Country", one state → "State · Country", one country →
+ * "Country", several → "N countries". Null when no site has geo data yet
+ * (sites saved before the product_geo migration backfill on their next edit).
+ */
+function rollupLocation(products: ProductRow[]): string | null {
+  const located = products.filter((product) => product.country);
+  if (located.length === 0) return null;
+
+  const unique = (values: (string | null | undefined)[]) =>
+    Array.from(new Set(values.filter(Boolean) as string[]));
+
+  const countries = unique(located.map((product) => product.country));
+  if (countries.length > 1) return `${countries.length} countries`;
+
+  const [country] = countries;
+  const cities = unique(located.map((product) => product.city));
+  if (cities.length === 1 && located.every((product) => product.city)) return `${cities[0]} · ${country}`;
+
+  const states = unique(located.map((product) => product.state));
+  if (states.length === 1 && located.every((product) => product.state)) return `${states[0]} · ${country}`;
+
+  return country;
+}
+
 // Get All Projects API — each project carries card aggregates (site count,
 // total installed kWp) for the Projects page.
 router.get('/', verifyToken, async (req: Request, res: Response) => {
@@ -43,11 +69,12 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
     if (projectsResult.error) throw projectsResult.error;
     if (productsResult.error) throw productsResult.error;
 
-    const stats = new Map<string, { sites: number; capacity: number }>();
+    const stats = new Map<string, { sites: number; capacity: number; products: ProductRow[] }>();
     (productsResult.data as ProductRow[]).forEach((product) => {
-      const entry = stats.get(product.project_id) ?? { sites: 0, capacity: 0 };
+      const entry = stats.get(product.project_id) ?? { sites: 0, capacity: 0, products: [] };
       entry.sites += 1;
       entry.capacity += product.kwp ?? (product.area * FALLBACK_WP_PER_M2) / 1000;
+      entry.products.push(product);
       stats.set(product.project_id, entry);
     });
 
@@ -56,6 +83,8 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
         ...toLegacyProject(row),
         sites: stats.get(row.id)?.sites ?? 0,
         capacity: Math.round((stats.get(row.id)?.capacity ?? 0) * 10) / 10,
+        // Location rolled up from the project's sites.
+        autoLocation: rollupLocation(stats.get(row.id)?.products ?? []),
       }))
     );
   } catch (error) {
@@ -66,12 +95,10 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
 
 router.post('/create', verifyToken, async (req: Request, res: Response) => {
   try {
-    const { name, location } = req.body as { name: string; location?: string };
+    const { name } = req.body as { name: string };
     const user = getUserIdFromtoken(req);
 
-    const { error } = await supabaseAdmin
-      .from('projects')
-      .insert({ name, user_id: user, ...(location ? { location } : {}) });
+    const { error } = await supabaseAdmin.from('projects').insert({ name, user_id: user });
 
     if (error) {
       if (error.code === UNIQUE_VIOLATION) {
@@ -88,20 +115,18 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// Update Project API — accepts any subset of { name, location, active }.
+// Update Project API — accepts any subset of { name, active }.
 router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, location, active } = req.body as {
+    const { name, active } = req.body as {
       name?: string;
-      location?: string;
       active?: boolean;
     };
     const user = getUserIdFromtoken(req);
 
     const patch = {
       ...(name !== undefined ? { name } : {}),
-      ...(location !== undefined ? { location } : {}),
       ...(active !== undefined ? { active } : {}),
     };
     if (!Object.keys(patch).length) {

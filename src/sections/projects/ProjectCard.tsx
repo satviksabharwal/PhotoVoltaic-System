@@ -156,7 +156,7 @@ export default function ProjectCard({ project, onOpen }: ProjectCardProps) {
             flexShrink: 0,
           }}
         />
-        {project.location || 'No location set'}
+        {project.autoLocation || 'No location yet'}
       </Box>
 
       <Box sx={{ height: '1px', background: solarApp.topBarBorder, m: '18px 0 14px' }} />

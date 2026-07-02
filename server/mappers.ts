@@ -1,20 +1,12 @@
 import moment from 'moment';
 import type { ProjectRow, ProductRow, PvReadingRow } from './types.js';
 
-// ----------------------------------------------------------------------------
-// Postgres rows → the legacy JSON shapes the React client already consumes
-// (src/types/models.ts). This keeps the API contract stable while the data
-// layer moves off MongoDB; the shapes can be modernised together with the
-// SolarSense page rebuilds.
-// ----------------------------------------------------------------------------
-
 export function toLegacyProject(row: ProjectRow) {
   return {
     id: row.id,
     name: row.name,
     isReportGeneratd: row.report_generated,
     createdDate: row.created_at,
-    location: row.location ?? null,
     active: row.active ?? true,
     updatedAt: row.updated_at ?? row.created_at,
   };
@@ -33,7 +25,6 @@ export function toLegacyProduct(row: ProductRow) {
     powerPeak: row.power_peak ?? undefined,
     pvValue: row.pv_value ?? undefined,
     isReportGeneratdProduct: row.report_generated,
-    // SolarSense fields (defaults for rows saved before the migration).
     module: row.module_type ?? 'mono',
     mounting: row.mounting ?? 'roof',
     losses: row.losses_pct ?? 14,

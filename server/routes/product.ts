@@ -5,6 +5,8 @@ import { supabaseAdmin } from '../supabaseAdmin.js';
 import { toLegacyProduct } from '../mappers.js';
 import { capacityKwp, fetchCurrentGti, fetchPvgisEstimate, hourlyEnergyKwh } from '../solar.js';
 import type { PanelConfig } from '../solar.js';
+import { reverseGeocode } from '../geocode.js';
+import type { GeoParts } from '../geocode.js';
 import type { PanelOrientation, ProductRow } from '../types.js';
 
 const router = express.Router();
@@ -58,6 +60,19 @@ async function storeAnnualEstimate(productId: string, estAnnualKwh: number | nul
   await supabaseAdmin.from('products').update({ est_annual_kwh: estAnnualKwh }).eq('id', productId);
 }
 
+/**
+ * Stores the reverse-geocoded place parts on a product (for the Projects page
+ * location rollup). Best-effort: ignored when geocoding failed or the
+ * product_geo migration has not run yet.
+ */
+async function storeGeoParts(productId: string, geo: GeoParts | null) {
+  if (!geo) return;
+  await supabaseAdmin
+    .from('products')
+    .update({ city: geo.city, state: geo.state, country: geo.country })
+    .eq('id', productId);
+}
+
 // Define the route for creating a new product
 router.post('/create', verifyToken, async (req: Request, res: Response) => {
   try {
@@ -93,7 +108,11 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
     // Current-hour irradiance + authoritative annual estimate, in parallel.
     // Both are best-effort: a flaky data source never blocks saving the site.
     const panel = toPanelConfig(body);
-    const [gti, pvgisEstimate] = await Promise.all([fetchCurrentGti(panel), fetchPvgisEstimate(panel)]);
+    const [gti, pvgisEstimate, geo] = await Promise.all([
+      fetchCurrentGti(panel),
+      fetchPvgisEstimate(panel),
+      reverseGeocode(panel.latitude, panel.longitude),
+    ]);
     const pvValue = gti != null ? hourlyEnergyKwh(panel, gti) : null;
 
     const { data: inserted, error: insertError } = await supabaseAdmin
@@ -127,6 +146,7 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
     }
 
     await storeAnnualEstimate((inserted as ProductRow).id, pvgisEstimate?.annualKwh ?? null);
+    await storeGeoParts((inserted as ProductRow).id, geo);
     await touchProject(project);
     res.json({ message: 'Product created successfully' });
   } catch (error) {
@@ -271,8 +291,12 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
       return;
     }
 
-    const pvgisEstimate = await fetchPvgisEstimate(panel);
+    const [pvgisEstimate, geo] = await Promise.all([
+      fetchPvgisEstimate(panel),
+      reverseGeocode(panel.latitude, panel.longitude),
+    ]);
     await storeAnnualEstimate(id, pvgisEstimate?.annualKwh ?? null);
+    await storeGeoParts(id, geo);
     await touchProject((data[0] as ProductRow).project_id);
     res.json({ message: 'Product updated successfully' });
   } catch (error) {
