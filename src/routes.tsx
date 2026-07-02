@@ -1,61 +1,59 @@
-import { Navigate, useRoutes } from "react-router-dom";
+import { Navigate, useRoutes } from 'react-router-dom';
 // layouts
-import DashboardLayout from "./layouts/dashboard";
-import SimpleLayout from "./layouts/simple";
+import SolarSenseLayout from './layouts/solarsense/SolarSenseLayout';
 
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import Page404 from "./pages/Page404";
-import DashboardAppPage from "./pages/DashboardAppPage";
-import TermsandConditions from "./sections/auth/register/TermsandConditions";
-import ProfileSetting from "./pages/ProfileSetting";
-import ForgotPassword from "./pages/ForgotPassword";
-import ProjectPage from "./pages/ProjectPage";
-import ProductPage from "./pages/ProductPage";
-import ProductVisualization from "./pages/ProductVisualization";
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import Page404 from './pages/Page404';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import ProjectPage from './pages/ProjectPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
+import InsightsPage from './pages/InsightsPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 
 // ----------------------------------------------------------------------
 
 export default function Router() {
   const routes = useRoutes([
+    // Signed-in app: Projects is the home page.
     {
-      path: "/dashboard",
-      element: <DashboardLayout />,
+      path: '/',
+      element: <SolarSenseLayout />,
       children: [
-        { element: <Navigate to="/dashboard/app" />, index: true },
-        { path: "app", element: <DashboardAppPage /> },
-        { path: "profile-setting", element: <ProfileSetting /> },
-        { path: "projects", element: <ProjectPage /> },
-        { path: "projects/:projectId", element: <ProductPage /> },
-        { path: "projects/:projectId/:productId", element: <ProductVisualization /> },
+        { element: <ProjectPage />, index: true },
+        { path: 'projects/:projectId', element: <ProjectDetailPage /> },
+        { path: 'projects/:projectId/:productId', element: <InsightsPage /> },
+        { path: 'account-settings', element: <AccountSettingsPage /> },
       ],
     },
     {
-      path: "login",
+      path: 'login',
       element: <LoginPage />,
     },
     {
-      path: "register",
+      path: 'register',
       element: <RegisterPage />,
     },
     {
-      path: "tac",
-      element: <TermsandConditions />,
-    },
-    {
-      path: "forgotpassword",
+      path: 'forgotpassword',
       element: <ForgotPassword />,
     },
     {
-      element: <SimpleLayout />,
-      children: [
-        { element: <Navigate to="/dashboard/app" />, index: true },
-        { path: "404", element: <Page404 /> },
-        { path: "*", element: <Navigate to="/404" /> },
-      ],
+      path: 'reset-password',
+      element: <ResetPassword />,
+    },
+    // Legacy URLs from the sidebar era.
+    {
+      path: 'dashboard/*',
+      element: <Navigate to="/" replace />,
     },
     {
-      path: "*",
+      path: '404',
+      element: <Page404 />,
+    },
+    {
+      path: '*',
       element: <Navigate to="/404" replace />,
     },
   ]);

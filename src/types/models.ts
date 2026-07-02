@@ -1,4 +1,4 @@
-// Shared domain models, mirroring the backend Mongoose schemas (server/models).
+// Shared domain models, mirroring the backend API shapes (server/mappers.ts).
 // ----------------------------------------------------------------------
 
 /** The authenticated user as stored in redux (subset returned by the auth API). */
@@ -19,7 +19,20 @@ export interface Project {
   name: string;
   isReportGeneratd?: boolean;
   createdDate?: string;
+  /**
+   * Location rolled up from the project's sites by the list endpoint
+   * (city → state → country → "N countries").
+   */
+  autoLocation?: string | null;
+  active?: boolean;
+  updatedAt?: string;
+  /** Card aggregates computed by the list endpoint. */
+  sites?: number;
+  capacity?: number;
 }
+
+export type ModuleType = 'mono' | 'poly' | 'thin';
+export type MountingType = 'roof' | 'ground' | 'track';
 
 /** A PV product = a panel array with physical + geographic configuration. */
 export interface Product {
@@ -28,6 +41,14 @@ export interface Product {
   orientation: PanelOrientation;
   inclination: number;
   area: number;
+  module?: ModuleType;
+  mounting?: MountingType;
+  losses?: number;
+  tariff?: number | null;
+  /** Installed capacity, computed server-side from area × module Wp/m². */
+  kwp?: number | null;
+  /** Authoritative yearly output estimate (kWh) from PVGIS; null if unavailable. */
+  estAnnualKwh?: number | null;
   longitude: number;
   latitude: number;
   project: string;

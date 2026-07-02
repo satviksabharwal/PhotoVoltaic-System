@@ -1,32 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @mui
-import { Link, Stack, IconButton, InputAdornment, TextField } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+import { Box, Link } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AxiosError, AxiosResponse } from 'axios';
 import { useDispatch } from 'react-redux';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { AppDispatch } from '../../../store/store';
-import api from '../../../utils/api';
-// components
-import Iconify from '../../../components/iconify';
+import { supabase } from '../../../utils/supabase';
+// sections
+import AuthField, { SubmitButton } from '../AuthField';
+import { solar } from '../tokens';
 
 // ----------------------------------------------------------------------
 
 interface LoginFormFields {
   email: string;
   password: string;
-}
-
-interface LoginResponse {
-  token?: string;
-  displayName?: string;
-}
-
-interface ErrorResponse {
-  error?: string;
 }
 
 const defaultFormFields: LoginFormFields = { email: '', password: '' };
@@ -39,7 +29,6 @@ export default function LoginForm() {
   const { email, password } = formFields;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    event.preventDefault();
     const { name, value } = event.target;
     setFormFields({ ...formFields, [name]: value });
   };
@@ -51,20 +40,18 @@ export default function LoginForm() {
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const url = '/user/login';
-      await api.post<LoginResponse>(url, { email, password }).then(
-        (response: AxiosResponse<LoginResponse>) => {
-          toast.success('Login Successful!!');
-          resetFormFields();
-          const tokenId = response?.data?.token;
-          const displayName = response?.data?.displayName;
-          dispatch(setCurrentUserAction({ tokenId, displayName, email }));
-          navigate('/dashboard', { replace: true });
-        },
-        (error: AxiosError<ErrorResponse>) => {
-          toast.error(error.response?.data?.error);
-        }
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success('Login Successful!!');
+      resetFormFields();
+      // The session token is managed by Supabase and attached to API requests
+      // automatically (utils/api.ts); redux only keeps display data.
+      const displayName = (data.user?.user_metadata?.display_name as string | undefined) ?? email;
+      dispatch(setCurrentUserAction({ displayName, email }));
+      navigate('/', { replace: true });
     } catch (error) {
       toast.error(`${error}`);
     }
@@ -75,58 +62,50 @@ export default function LoginForm() {
   };
 
   return (
-    <>
-      <form onSubmit={handleLogin}>
-        <ToastContainer />
-        <Stack spacing={3}>
-          <TextField
-            name="email"
-            label="Email address"
-            type={'email'}
-            required
-            id="email_textfield"
-            variant="outlined"
-            fullWidth
-            onChange={handleChange}
-          />
+    <form onSubmit={handleLogin}>
+      <ToastContainer />
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <AuthField
+          label="Email address"
+          name="email"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={handleChange}
+        />
 
-          <TextField
-            name="password"
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            required
-            id="password_textfield"
-            variant="outlined"
-            fullWidth
-            onChange={handleChange}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    <Iconify icon={showPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Stack>
+        <AuthField
+          label="Password"
+          name="password"
+          placeholder="••••••••"
+          autoComplete="current-password"
+          required
+          isPassword
+          value={password}
+          onChange={handleChange}
+          visible={showPassword}
+          onToggleVisible={() => setShowPassword((prev) => !prev)}
+        />
+      </Box>
 
-        <Stack direction="row" alignItems="center" justifyContent="flex-start" sx={{ my: 2 }}>
-          <Link
-            variant="subtitle2"
-            underline="hover"
-            sx={{ ml: 19, marginLeft: `auto` }}
-            onClick={forgotPasswordHandler}
-            style={{ cursor: 'pointer' }}
-          >
-            Forgot password?
-          </Link>
-        </Stack>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: '10px' }}>
+        <Link
+          onClick={forgotPasswordHandler}
+          sx={{
+            fontSize: '13.5px',
+            fontWeight: 600,
+            color: solar.accentDeep,
+            textDecoration: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Forgot password?
+        </Link>
+      </Box>
 
-        <LoadingButton fullWidth size="large" type="submit" variant="contained" style={{ backgroundColor: '#48B2E3' }}>
-          Login
-        </LoadingButton>
-      </form>
-    </>
+      <SubmitButton type="submit">Sign in</SubmitButton>
+    </form>
   );
 }

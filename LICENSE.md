@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2021 Minimal UI ([https://minimals.cc/](https://minimals.cc/))
+Copyright (c) 2026 Satvik Sabharwal (SolarSense)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## Third-party notice
+
+Small portions of this codebase (the MUI theme configuration in `src/theme/`
+and the `iconify` / `scroll-to-top` components) are derived from the
+Minimal UI free template, Copyright (c) 2021 Minimal UI
+(https://minimals.cc/), used under the MIT License above.

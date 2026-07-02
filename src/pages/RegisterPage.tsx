@@ -1,87 +1,59 @@
 import { Link as RouterLink } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { styled, Theme } from '@mui/material/styles';
-import { Link, Container, Typography } from '@mui/material';
-// hooks
-import useResponsive from '../hooks/useResponsive';
-// components
-import Logo from '../components/logo';
+import { Box, Link, Typography } from '@mui/material';
 // sections
+import AuthLayout from '../sections/auth/AuthLayout';
+import { solar } from '../sections/auth/tokens';
 import { RegisterForm } from '../sections/auth/register';
 
 // ----------------------------------------------------------------------
 
-const StyledRoot = styled('div')(({ theme }: { theme: Theme }) => ({
-  [theme.breakpoints.up('md')]: {
-    display: 'flex',
-  },
-}));
-
-const StyledSection = styled('div')(({ theme }: { theme: Theme }) => ({
-  width: '100%',
-  maxWidth: 480,
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  boxShadow: theme.customShadows.card,
-  backgroundColor: theme.palette.background.default,
-}));
-
-const StyledContent = styled('div')(({ theme }: { theme: Theme }) => ({
-  maxWidth: 480,
-  margin: 'auto',
-  minHeight: '100vh',
-  display: 'flex',
-  justifyContent: 'center',
-  flexDirection: 'column',
-  padding: theme.spacing(12, 0),
-}));
-
-// ----------------------------------------------------------------------
-
 export default function RegisterPage() {
-  const mdUp = useResponsive('up', 'md', 'md');
-
   return (
     <>
       <Helmet>
-        <title> Register | PV System </title>
+        <title> Create account | SolarSense </title>
       </Helmet>
 
-      <StyledRoot>
-        <Logo
+      <AuthLayout
+        taglineHeading={
+          <>
+            Every light out there{' '}
+            <Box component="span" sx={{ color: solar.accent }}>
+              could run on sunshine.
+            </Box>
+          </>
+        }
+        taglineText="Create a free account and start estimating hourly solar output for any location on Earth."
+        ticks={['2-minute setup', 'No credit card']}
+      >
+        <Typography
+          component="h2"
           sx={{
-            position: 'fixed',
-            top: { xs: 16, sm: 24, md: 40 },
-            left: { xs: 16, sm: 24, md: 40 },
+            fontFamily: solar.fontDisplay,
+            fontWeight: 700,
+            fontSize: '28px',
+            letterSpacing: '-0.01em',
+            m: 0,
+            color: solar.ink,
           }}
-        />
+        >
+          Create your account
+        </Typography>
+        <Typography sx={{ fontFamily: solar.fontBody, fontSize: '14.5px', color: solar.sub, mt: '8px', mb: '26px' }}>
+          Already have an account?{' '}
+          <Link
+            component={RouterLink}
+            to="/login"
+            sx={{ color: solar.accentDeep, fontWeight: 600, textDecoration: 'none' }}
+          >
+            Sign in
+          </Link>
+        </Typography>
 
-        {mdUp && (
-          <StyledSection>
-            <Typography variant="h4" sx={{ px: 5, mt: 10, mb: 2, ml: 2, color: '#48B2E3' }}>
-              Welcome to PV System
-            </Typography>
-            <img src="/assets/illustrations/k2.png" alt="reister" />
-          </StyledSection>
-        )}
-
-        <Container maxWidth="sm">
-          <StyledContent>
-            <Typography variant="h4" gutterBottom sx={{ mt: 5 }}>
-              Are you a new user? Register here
-            </Typography>
-            <Typography style={{ fontSize: 14, color: 'GrayText' }} sx={{ mb: 2 }}>
-              Have already an account?{' '}
-              <Link variant="subtitle2" component={RouterLink} to="/login">
-                Login here
-              </Link>
-            </Typography>
-            <RegisterForm />
-          </StyledContent>
-        </Container>
-      </StyledRoot>
+        <RegisterForm />
+      </AuthLayout>
     </>
   );
 }

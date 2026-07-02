@@ -1,88 +1,59 @@
-import { Link as RouterLink } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import { Link as RouterLink } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 // @mui
-import { styled, Theme } from "@mui/material/styles";
-import { Link, Container, Typography } from "@mui/material";
-// hooks
-import useResponsive from "../hooks/useResponsive";
-// components
-import Logo from "../components/logo";
+import { Box, Link, Typography } from '@mui/material';
 // sections
-import { LoginForm } from "../sections/auth/login";
-
-// ----------------------------------------------------------------------
-
-const StyledRoot = styled("div")(({ theme }: { theme: Theme }) => ({
-  [theme.breakpoints.up("md")]: {
-    display: "flex",
-  },
-}));
-
-const StyledSection = styled("div")(({ theme }: { theme: Theme }) => ({
-  width: "100%",
-  maxWidth: 480,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  boxShadow: theme.customShadows.card,
-  backgroundColor: theme.palette.background.default,
-}));
-
-const StyledContent = styled("div")(({ theme }: { theme: Theme }) => ({
-  maxWidth: 480,
-  margin: "auto",
-  minHeight: "100vh",
-  display: "flex",
-  justifyContent: "center",
-  flexDirection: "column",
-  padding: theme.spacing(12, 0),
-}));
+import AuthLayout from '../sections/auth/AuthLayout';
+import { solar } from '../sections/auth/tokens';
+import { LoginForm } from '../sections/auth/login';
 
 // ----------------------------------------------------------------------
 
 export default function LoginPage() {
-  const mdUp = useResponsive("up", "md", "md");
-
   return (
     <>
       <Helmet>
-        <title> Login | PV System </title>
+        <title> Sign in | SolarSense </title>
       </Helmet>
 
-      <StyledRoot>
-        <Logo
+      <AuthLayout
+        taglineHeading={
+          <>
+            Catch the sun by day.{' '}
+            <Box component="span" sx={{ color: solar.accent }}>
+              Light the city by night.
+            </Box>
+          </>
+        }
+        taglineText="Pick any spot on the map and see exactly how much solar energy your panels could generate — down to the hour."
+        ticks={['Hourly forecasts', 'Any location', 'Free to use']}
+      >
+        <Typography
+          component="h2"
           sx={{
-            position: "fixed",
-            top: { xs: 16, sm: 24, md: 40 },
-            left: { xs: 16, sm: 24, md: 40 },
+            fontFamily: solar.fontDisplay,
+            fontWeight: 700,
+            fontSize: '28px',
+            letterSpacing: '-0.01em',
+            m: 0,
+            color: solar.ink,
           }}
-        />
+        >
+          Welcome back
+        </Typography>
+        <Typography sx={{ fontFamily: solar.fontBody, fontSize: '14.5px', color: solar.sub, mt: '8px', mb: '26px' }}>
+          Don’t have an account?{' '}
+          <Link
+            component={RouterLink}
+            to="/register"
+            sx={{ color: solar.accentDeep, fontWeight: 600, textDecoration: 'none' }}
+          >
+            Get started
+          </Link>
+        </Typography>
 
-        {mdUp && (
-          <StyledSection>
-            <Typography variant="h4" sx={{ px: 5, mt: -5, mb: 2, ml: 2, color: "#48B2E3" }}>
-              Hi, Welcome Back
-            </Typography>
-            <img src="/assets/illustrations/illustration_login.png" alt="login" />
-          </StyledSection>
-        )}
-
-        <Container maxWidth="sm">
-          <StyledContent>
-            <Typography variant="h4" gutterBottom sx={{ mt: 5 }}>
-              Sign in to PV System
-            </Typography>
-
-            <Typography variant="body2" sx={{ mb: 5 }}>
-              Don’t have an account? {""}
-              <Link variant="subtitle2" component={RouterLink} to="/register">
-                Get started
-              </Link>
-            </Typography>
-            <LoginForm />
-          </StyledContent>
-        </Container>
-      </StyledRoot>
+        <LoginForm />
+      </AuthLayout>
     </>
   );
 }
