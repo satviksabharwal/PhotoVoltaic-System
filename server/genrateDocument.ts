@@ -3,14 +3,25 @@ import fs from 'fs';
 import nodemailer from 'nodemailer';
 import type { SentMessageInfo } from 'nodemailer';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
-import { Product } from './db/index.js';
+import { supabaseAdmin } from './supabaseAdmin.js';
 import { fromEmail } from './commonFunctions.js';
-import type { PvHourEntry } from './models/pvDetails.js';
+import type { LegacyPvHourEntry } from './mappers.js';
 
 /** The subset of a PvDetails record the report needs. */
 interface ReportPvData {
   product: string;
-  hourWiseData: PvHourEntry[];
+  hourWiseData: LegacyPvHourEntry[];
+}
+
+/** Batch-fetches product names so the report only queries once. */
+async function fetchProductNames(productIds: string[]): Promise<Map<string, string>> {
+  if (!productIds.length) return new Map();
+  const { data } = await supabaseAdmin
+    .from('products')
+    .select('id, name')
+    .in('id', productIds);
+  const rows = (data as { id: string; name: string }[] | null) ?? [];
+  return new Map(rows.map((row) => [row.id, row.name]));
 }
 
 /** The subset of a project/product record the report needs. */
@@ -28,8 +39,10 @@ export async function generateAndSendPDF(
   // Set up the PDF document
   doc.fontSize(16).text('PV Value Report', { align: 'center' });
 
+  const productNames = await fetchProductNames(data.map((productData) => productData.product));
+
   // Generate the product details table
-  await generateProductDetailsTable(doc, data, projectDetails);
+  generateProductDetailsTable(doc, data, projectDetails, productNames);
 
   // Generate the total PV value
   const totalPVValue = calculateTotalPVValue(data);
@@ -39,13 +52,18 @@ export async function generateAndSendPDF(
   doc.moveDown().fontSize(12).text('This report provides an overview of the PV value for the given products.');
 
   // Generate and embed the chart image for each product
-  for (const productData of data) {
-    const productdetails = await Product.findOne({ id: productData.product }).lean();
-    const chartImage = await generateChartImage(productData.hourWiseData);
+  const productPageData = await Promise.all(
+    data.map(async (productData) => ({
+      productName: productNames.get(productData.product) ?? '',
+      chartImage: await generateChartImage(productData.hourWiseData),
+    }))
+  );
+
+  productPageData.forEach(({ productName, chartImage }) => {
     const page = doc.addPage();
-    page.fontSize(12).text(`Product name ${productdetails?.name}`);
+    page.fontSize(12).text(`Product name ${productName}`);
     page.image(chartImage, { width: 500, height: 300, align: 'center' });
-  }
+  });
 
   // Save the PDF to a file
   const pdfPath = 'pv_report.pdf';
@@ -92,10 +110,11 @@ export async function generateAndSendPDF(
   });
 }
 
-async function generateProductDetailsTable(
+function generateProductDetailsTable(
   doc: PDFKit.PDFDocument,
   data: ReportPvData[],
-  projectDetails: ReportSubject | null | undefined
+  projectDetails: ReportSubject | null | undefined,
+  productNames: Map<string, string>
 ) {
   doc.moveDown().fontSize(14).text('Product Details');
 
@@ -106,29 +125,23 @@ async function generateProductDetailsTable(
   doc.text('PV Value', { width: 100, align: 'left' });
 
   // Table rows
-  for (const productData of data) {
-    const productdetails = await Product.findOne({ id: productData.product }).lean();
+  data.forEach((productData) => {
     doc.moveDown();
     doc.fontSize(12).text(projectDetails?.name ?? '', { width: 100, align: 'left' });
-    doc.text(productdetails?.name ?? '', { width: 100, align: 'left' });
-    // Calculate and display the PV value for the product
-
-    const pvValue = calculateTotalPVValue([productData]);
-    doc.text(pvValue.toString(), { width: 100, align: 'left' });
-  }
+    doc.text(productNames.get(productData.product) ?? '', { width: 100, align: 'left' });
+    doc.text(calculateTotalPVValue([productData]).toString(), { width: 100, align: 'left' });
+  });
 }
 
 function calculateTotalPVValue(data: ReportPvData[]): number {
-  let totalPVValue = 0;
-  for (const productData of data) {
-    for (const entry of productData.hourWiseData) {
-      totalPVValue += entry.pvValue;
-    }
-  }
-  return totalPVValue;
+  return data.reduce(
+    (total, productData) =>
+      total + productData.hourWiseData.reduce((sum, entry) => sum + entry.pvValue, 0),
+    0
+  );
 }
 
-async function generateChartImage(hourWiseData: PvHourEntry[]): Promise<Buffer> {
+async function generateChartImage(hourWiseData: LegacyPvHourEntry[]): Promise<Buffer> {
   const width = 800;
   const height = 400;
 
@@ -140,7 +153,7 @@ async function generateChartImage(hourWiseData: PvHourEntry[]): Promise<Buffer> 
   const configuration = {
     type: 'bar' as const,
     data: {
-      labels: labels,
+      labels,
       datasets: [
         {
           label: 'PV Value',

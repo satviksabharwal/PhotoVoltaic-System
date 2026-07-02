@@ -1,27 +1,40 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import { verifyToken, getUserIdFromtoken } from '../commonFunctions.js';
-import { Product, Project, PvDetails, User } from '../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
+import { supabaseAdmin } from '../supabaseAdmin.js';
 import { generateAndSendPDF } from '../genrateDocument.js';
-import moment from 'moment';
+import { toLegacyProject, readingsToLegacyPvDetails } from '../mappers.js';
+import type { ProjectRow, ProductRow, ProfileRow, PvReadingRow } from '../types.js';
 
 const router = express.Router();
+
+const UNIQUE_VIOLATION = '23505';
 
 // Get All Projects API
 router.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Retrieve all projects from the database
     const user = getUserIdFromtoken(req);
-    const project = req.query.projectId as string | undefined;
-    let projects;
-    if (project) {
-      projects = await Project.findOne({ user, id: project });
-    } else {
-      projects = await Project.find({ user });
+    const projectId = req.query.projectId as string | undefined;
+
+    if (projectId) {
+      const { data, error } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('user_id', user)
+        .eq('id', projectId)
+        .maybeSingle();
+      if (error) throw error;
+      res.json(data ? toLegacyProject(data as ProjectRow) : null);
+      return;
     }
 
-    res.json(projects);
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .select('*')
+      .eq('user_id', user)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    res.json((data as ProjectRow[]).map(toLegacyProject));
   } catch (error) {
     console.error('Error in get all projects API:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -30,28 +43,20 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
 
 router.post('/create', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Extract project name from the request body
-    const { name } = req.body as { name: string };
+    const { name, location } = req.body as { name: string; location?: string };
     const user = getUserIdFromtoken(req);
-    const existingProject = await Project.findOne({ name, user });
-    if (existingProject) {
-      return res.status(400).json({ error: 'Project name already exists!' });
+
+    const { error } = await supabaseAdmin
+      .from('projects')
+      .insert({ name, user_id: user, ...(location ? { location } : {}) });
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        res.status(400).json({ error: 'Project name already exists!' });
+        return;
+      }
+      throw error;
     }
-
-    // Generate a unique ID using UUID
-    const id = uuidv4();
-    const createdDate = moment().format('YYYY-MM-DD');
-
-    // Create a new project
-    const project = new Project({
-      id,
-      name,
-      user,
-      createdDate,
-    });
-
-    // Save the project to the database
-    await project.save();
 
     res.json({ message: 'Project created successfully' });
   } catch (error) {
@@ -63,32 +68,32 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
 // Update Project API
 router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Extract project ID from the request parameters
     const { id } = req.params;
-
-    // Extract updated project details from the request body
     const { name } = req.body as { name: string };
     const user = getUserIdFromtoken(req);
 
-    const haveAccess = await Project.findOne({ user, id });
-    if (!haveAccess) {
-      return res.status(400).json({ error: 'Unauthorized' });
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .update({ name })
+      .eq('id', id)
+      .eq('user_id', user)
+      .select();
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        res.status(400).json({ error: 'Project name already exists!' });
+        return;
+      }
+      throw error;
+    }
+    if (!data?.length) {
+      res.status(400).json({ error: 'Unauthorized' });
+      return;
     }
 
-    const existingProject = await Project.findOne({ name, user });
-    if (existingProject) {
-      return res.status(400).json({ error: 'Project name already exists!' });
-    }
-
-    // Update the project name using the updateOne method
-    const result = await Project.updateOne({ id }, { $set: { name } });
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
     res.json({
       message: 'Project updated successfully',
-      result: { name: name },
+      result: { name },
     });
   } catch (error) {
     console.error('Error in update project API:', error);
@@ -96,25 +101,22 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// Delete Project API
+// Delete Project API — products and pv_readings cascade via foreign keys.
 router.delete('/delete/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Extract project ID from the request parameters
     const { id } = req.params;
     const user = getUserIdFromtoken(req);
-    const haveAccess = await Project.findOne({ user, id });
-    if (!haveAccess) {
-      return res.status(400).json({ error: 'Unauthorized' });
-    }
 
-    // Delete the project by ID
-    const [projectResult] = await Promise.all([
-      Project.deleteOne({ id }),
-      Product.deleteMany({ project: id }),
-    ]);
-
-    if (projectResult.deletedCount === 0) {
-      return res.status(404).json({ message: 'Project not found' });
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user)
+      .select();
+    if (error) throw error;
+    if (!data?.length) {
+      res.status(400).json({ error: 'Unauthorized' });
+      return;
     }
 
     res.json({ message: 'Project deleted successfully' });
@@ -124,53 +126,82 @@ router.delete('/delete/:id', verifyToken, async (req: Request, res: Response) =>
   }
 });
 
-// Get PV data API
+// Get PV data API — returns readings in the legacy hourWiseData shape.
 router.get('/getPVData', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Retrieve all pvDetails from the database
+    const user = getUserIdFromtoken(req);
     const project = req.query.projectId as string | undefined;
     const product = req.query.productId as string | undefined;
-    if (!project && !product) {
-      return res.json({ message: 'Provide any one product or project id' });
+    if ((!project && !product) || (project && product)) {
+      res.json({ message: 'Provide any one product or project id' });
+      return;
     }
-    if (project && product) {
-      return res.json({ message: 'Provide any one product or project id' });
-    }
+
+    let query = supabaseAdmin
+      .from('pv_readings')
+      .select('*')
+      .eq('user_id', user)
+      .order('recorded_at', { ascending: true });
+    query = project ? query.eq('project_id', project) : query.eq('product_id', product);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const details = readingsToLegacyPvDetails(data as PvReadingRow[]);
     if (project) {
-      const pvDetails = await PvDetails.find({ project });
-      return res.json(pvDetails);
-    } else if (product) {
-      const pvDetails = await PvDetails.findOne({ product });
-      return res.json(pvDetails);
+      res.json(details);
+      return;
     }
-    return res.json({ message: 'No able to fetch' });
+    res.json(details[0] ?? null);
   } catch (error) {
     console.error('Error in get pv details API:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Get Generate data API
+// Generate project report API
 router.get('/generateApi/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Retrieve all pvDetails from the database
     const user = getUserIdFromtoken(req);
     const project = req.params.id;
-    const pvDetails = await PvDetails.find({ project, user }).lean();
-    const projectDetails = await Project.findOne({ id: project }).lean();
-    if (projectDetails?.isReportGeneratd) {
-      return res.status(400).json({ message: 'Report already generated' });
+
+    const { data: projectDetails, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('*')
+      .eq('id', project)
+      .eq('user_id', user)
+      .maybeSingle();
+    if (projectError) throw projectError;
+    if ((projectDetails as ProjectRow | null)?.report_generated) {
+      res.status(400).json({ message: 'Report already generated' });
+      return;
     }
-    const userDetails = await User.findOne({ _id: user }).lean();
-    if (pvDetails && userDetails) {
-      generateAndSendPDF(pvDetails, userDetails.email, projectDetails)
+
+    const { data: readings, error: readingsError } = await supabaseAdmin
+      .from('pv_readings')
+      .select('*')
+      .eq('project_id', project)
+      .eq('user_id', user)
+      .order('recorded_at', { ascending: true });
+    if (readingsError) throw readingsError;
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', user)
+      .maybeSingle();
+    if (profileError) throw profileError;
+
+    if (profile) {
+      const pvDetails = readingsToLegacyPvDetails(readings as PvReadingRow[]);
+      generateAndSendPDF(pvDetails, (profile as ProfileRow).email, projectDetails as ProjectRow | null)
         .then(async () => {
           console.log('PDF sent successfully!');
-          const result = await Project.updateOne(
-            { id: project },
-            { $set: { isReportGeneratd: true } }
-          );
-          if (result) {
+          const { error } = await supabaseAdmin
+            .from('projects')
+            .update({ report_generated: true })
+            .eq('id', project);
+          if (!error) {
             res.json({ message: `Report sent to email` });
           }
         })
@@ -184,27 +215,49 @@ router.get('/generateApi/:id', verifyToken, async (req: Request, res: Response) 
   }
 });
 
-// Get Generat Product data API
+// Generate product report API
 router.get('/generateApi/product/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Retrieve all pvDetails from the database
     const user = getUserIdFromtoken(req);
     const product = req.params.id;
-    const pvDetails = await PvDetails.find({ product, user }).lean();
-    const productDetails = await Product.findOne({ id: product }).lean();
-    if (productDetails?.isReportGeneratdProduct) {
-      return res.status(400).json({ message: 'Report already generated' });
+
+    const { data: productDetails, error: productError } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', product)
+      .eq('user_id', user)
+      .maybeSingle();
+    if (productError) throw productError;
+    if ((productDetails as ProductRow | null)?.report_generated) {
+      res.status(400).json({ message: 'Report already generated' });
+      return;
     }
-    const userDetails = await User.findOne({ _id: user }).lean();
-    if (pvDetails && userDetails) {
-      generateAndSendPDF(pvDetails, userDetails.email, productDetails)
+
+    const { data: readings, error: readingsError } = await supabaseAdmin
+      .from('pv_readings')
+      .select('*')
+      .eq('product_id', product)
+      .eq('user_id', user)
+      .order('recorded_at', { ascending: true });
+    if (readingsError) throw readingsError;
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', user)
+      .maybeSingle();
+    if (profileError) throw profileError;
+
+    if (profile) {
+      const pvDetails = readingsToLegacyPvDetails(readings as PvReadingRow[]);
+      generateAndSendPDF(pvDetails, (profile as ProfileRow).email, productDetails as ProductRow | null)
         .then(async () => {
           console.log('PDF sent successfully!');
-          const result = await Product.updateOne(
-            { id: product },
-            { $set: { isReportGeneratdProduct: true } }
-          );
-          if (result) {
+          const { error } = await supabaseAdmin
+            .from('products')
+            .update({ report_generated: true })
+            .eq('id', product);
+          if (!error) {
             res.json({ message: `Report sent to email` });
           }
         })

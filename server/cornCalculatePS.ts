@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import axios from 'axios';
+import moment from 'moment';
 import {
   calculateElectricityProduced,
   getRandomNumber,
@@ -7,16 +8,10 @@ import {
   convertToDoubleDigit,
 } from './commonFunctions.js';
 import type { WeatherHistoryResponse } from './commonFunctions.js';
-import { Product, Project, PvDetails, User } from './db/index.js';
-import { v4 as uuidv4 } from 'uuid';
-import moment from 'moment';
+import { supabaseAdmin } from './supabaseAdmin.js';
 import { generateAndSendPDF } from './genrateDocument.js';
-import type { IProduct } from './models/product.js';
-import type { PvHourEntry } from './models/pvDetails.js';
-import type mongoose from 'mongoose';
-
-/** A product as returned by Product.find().lean(). */
-type LeanProduct = IProduct & { _id: mongoose.Types.ObjectId };
+import { readingsToLegacyPvDetails } from './mappers.js';
+import type { ProductRow, ProfileRow, ProjectRow, PvReadingRow } from './types.js';
 
 // Define the cron schedule to run every hour
 export const executeCorn = () => {
@@ -25,11 +20,17 @@ export const executeCorn = () => {
       const currentdate = new Date();
       const fromDate = moment().format('YYYY-MM-DD');
       const endDate = moment().add(1, 'days').format('YYYY-MM-DD');
-      // Make a request to the weather API
+      // The hour bucket this run writes; unique(product_id, recorded_at)
+      // makes re-runs within the same hour no-ops.
+      const recordedAt = moment().startOf('hour').toISOString(true);
 
       try {
-        const data = await Product.find().lean();
-        data?.map(async (productData) => {
+        const { data: products, error } = await supabaseAdmin
+          .from('products')
+          .select('*');
+        if (error) throw error;
+
+        (products as ProductRow[]).forEach(async (productData) => {
           const weatherResponse = await axios.get<WeatherHistoryResponse>(
             'https://api.weatherbit.io/v2.0/history/hourly',
             {
@@ -42,26 +43,10 @@ export const executeCorn = () => {
               },
             }
           );
-          const pvData = await PvDetails.findOne({
-            product: productData.id,
-          }).lean();
           await autoGenrateReportFor30Days(productData);
           const dateWithHours = `${fromDate}:${convertToDoubleDigit(
             currentdate.getHours()
           )}`;
-          const productPayload: {
-            id: string;
-            product: string;
-            project: string;
-            user: mongoose.Types.ObjectId;
-            hourWiseData: PvHourEntry[];
-          } = {
-            id: uuidv4(),
-            product: productData.id,
-            project: productData.project,
-            user: productData.user,
-            hourWiseData: [],
-          };
           if (
             !weatherResponse.data.data ||
             !weatherResponse.data.data.length
@@ -70,7 +55,7 @@ export const executeCorn = () => {
               'Issue with weather API',
               weatherResponse?.data?.data
             );
-            return 'Issue with weather API';
+            return;
           }
 
           const filteredData = weatherResponse.data.data.filter(
@@ -89,44 +74,30 @@ export const executeCorn = () => {
             // Hours part from the timestamp
             const hoursTs = dateTs.getHours();
             const powerPeak = (pvValue * 1000) / (hoursTs ?? opitionalSolarVal);
-            const finalObj: PvHourEntry = {
-              dateAndTime: dateWithHours,
-              pvValue: pvValue,
-              powerPeak: powerPeak,
-              area: area,
-              inclination: inclination,
-              solarRad: filteredData[0]?.dni ?? opitionalSolarVal,
-            };
-            if (pvData) {
-              //Update
-              productPayload.hourWiseData = [...pvData.hourWiseData];
-              const filteredInPvdetails = pvData.hourWiseData.filter(
-                (pv) => pv.dateAndTime === dateWithHours
-              );
-              if (filteredInPvdetails.length) {
-                console.log('Data already updated');
-                return;
-              }
-              productPayload.hourWiseData.push(finalObj);
-              const res = await PvDetails.updateOne(
-                { id: pvData.id },
-                { $set: { hourWiseData: productPayload.hourWiseData } }
-              );
-              if (res.matchedCount === 0) {
-                console.log(
-                  "calculation completed for the hour and it's updated"
-                );
-              }
+
+            const { data: inserted, error: upsertError } = await supabaseAdmin
+              .from('pv_readings')
+              .upsert(
+                {
+                  product_id: productData.id,
+                  project_id: productData.project_id,
+                  user_id: productData.user_id,
+                  recorded_at: recordedAt,
+                  pv_value: pvValue,
+                  power_peak: powerPeak,
+                  area,
+                  inclination,
+                  solar_rad: filteredData[0]?.dni ?? opitionalSolarVal,
+                },
+                { onConflict: 'product_id,recorded_at', ignoreDuplicates: true }
+              )
+              .select();
+            if (upsertError) {
+              console.error('Error saving reading:', upsertError);
+            } else if (inserted?.length) {
+              console.log("calculation completed for the hour and it's created");
             } else {
-              //Create
-              productPayload.hourWiseData.push(finalObj);
-              const pvDetailData = new PvDetails(productPayload);
-              const res = await pvDetailData.save();
-              if (res) {
-                console.log(
-                  "calculation completed for the hour and it's created"
-                );
-              }
+              console.log('Data already updated');
             }
           }
         });
@@ -142,32 +113,48 @@ export const executeCorn = () => {
   });
 };
 
-const autoGenrateReportFor30Days = async (productData: LeanProduct) => {
-  const projectDetails = await Project.findOne({
-    id: productData.project,
-  }).lean();
-  if (projectDetails?.createdDate && !projectDetails.isReportGeneratd) {
-    const after30Days = moment(projectDetails.createdDate)
-      .add(31, 'days')
-      .format('YYYY-MM-DD');
+const autoGenrateReportFor30Days = async (productData: ProductRow) => {
+  const { data: projectDetails, error } = await supabaseAdmin
+    .from('projects')
+    .select('*')
+    .eq('id', productData.project_id)
+    .maybeSingle();
+  if (error) {
+    console.error('Error loading project for 30-day report:', error);
+    return;
+  }
+  const project = projectDetails as ProjectRow | null;
+  if (project?.created_at && !project.report_generated) {
+    const after30Days = moment(project.created_at).add(31, 'days').format('YYYY-MM-DD');
     const today = moment().format('YYYY-MM-DD');
     if (after30Days === today) {
-      const pvDetails = await PvDetails.find({
-        project: productData.project,
-        user: productData.user,
-      }).lean();
-      const userDetails = await User.findOne({ _id: productData.user }).lean();
-      if (!userDetails) {
-        console.error('User not found for 30-day report:', productData.user);
+      const { data: readings, error: readingsError } = await supabaseAdmin
+        .from('pv_readings')
+        .select('*')
+        .eq('project_id', productData.project_id)
+        .eq('user_id', productData.user_id)
+        .order('recorded_at', { ascending: true });
+      if (readingsError) {
+        console.error('Error loading readings for 30-day report:', readingsError);
         return;
       }
-      generateAndSendPDF(pvDetails, userDetails.email, projectDetails)
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', productData.user_id)
+        .maybeSingle();
+      if (!profile) {
+        console.error('User profile not found for 30-day report:', productData.user_id);
+        return;
+      }
+      const pvDetails = readingsToLegacyPvDetails(readings as PvReadingRow[]);
+      generateAndSendPDF(pvDetails, (profile as ProfileRow).email, project)
         .then(async () => {
           console.log('PDF sent successfully!');
-          await Project.updateOne(
-            { id: productData.project },
-            { $set: { isReportGeneratd: true } }
-          );
+          await supabaseAdmin
+            .from('projects')
+            .update({ report_generated: true })
+            .eq('id', productData.project_id);
         })
         .catch((error) => {
           console.error('Error sending PDF:', error);

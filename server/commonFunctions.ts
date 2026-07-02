@@ -1,19 +1,15 @@
 import 'dotenv/config';
 import type { Request, Response, NextFunction } from 'express';
-import type mongoose from 'mongoose';
 import { supabaseAdmin } from './supabaseAdmin.js';
-import { User } from './db/index.js';
 
 // Fields attached to the request by the verifyToken middleware.
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      /** Mongo user _id — application data is still keyed by this. */
-      userId?: mongoose.Types.ObjectId;
+      /** Supabase auth user id (UUID) — application data is keyed by this. */
+      userId?: string;
       userEmail?: string;
-      /** Supabase auth user id (UUID). */
-      authUserId?: string;
     }
   }
 }
@@ -35,19 +31,14 @@ const { WEATHER_API_TOKEN, WEATHER_API_TOKEN_REGISTERED_EMAIL_ID } =
 export const weathertoken = WEATHER_API_TOKEN;
 export const fromEmail = WEATHER_API_TOKEN_REGISTERED_EMAIL_ID;
 
-// Token verification middleware.
-//
-// Authentication lives in Supabase, but application data is still keyed by
-// the Mongo user _id (projects/products/pvDetails reference it). Until the
-// data moves to Postgres, this middleware bridges the two identities: it
-// validates the Supabase access token, then finds (or creates, on a user's
-// first request) the matching Mongo user by email and exposes its _id as
-// `req.userId` for the route handlers.
-export async function verifyToken(req: Request, res: Response, next: NextFunction) {
+// Token verification middleware: validates the Supabase access token and
+// exposes the auth user's id/email to route handlers.
+export async function verifyToken(req: Request, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
 
   if (!header) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
   }
 
   // Accept both "Bearer <token>" and a bare token.
@@ -56,31 +47,36 @@ export async function verifyToken(req: Request, res: Response, next: NextFunctio
   try {
     const { data, error } = await supabaseAdmin.auth.getUser(token);
     if (error || !data?.user?.email) {
-      return res.status(403).json({ message: 'Invalid token' });
+      res.status(403).json({ message: 'Invalid token' });
+      return;
     }
 
     const authUser = data.user;
-    let user = await User.findOne({ email: authUser.email });
-    if (!user) {
-      user = await new User({
-        email: authUser.email,
-        displayName: authUser.user_metadata?.display_name,
-      }).save();
-    }
 
-    req.userId = user._id;
+    // Profiles are normally created by a DB trigger at signup; this upsert
+    // self-heals accounts that predate the trigger so foreign keys on
+    // projects/products never dangle.
+    await supabaseAdmin.from('profiles').upsert(
+      {
+        id: authUser.id,
+        email: authUser.email,
+        display_name: authUser.user_metadata?.display_name ?? null,
+      },
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
+
+    req.userId = authUser.id;
     req.userEmail = authUser.email;
-    req.authUserId = authUser.id;
     next();
   } catch (error) {
     console.error('Error verifying token:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 
-// The Mongo user _id resolved by verifyToken. Every route that calls this
+// The Supabase user id resolved by verifyToken. Every route that calls this
 // already runs behind the verifyToken middleware.
-export function getUserIdFromtoken(req: Request): mongoose.Types.ObjectId | undefined {
+export function getUserIdFromtoken(req: Request): string | undefined {
   return req.userId;
 }
 
@@ -119,8 +115,7 @@ export function getRandomNumber(): number {
 
 export function convertToDoubleDigit(number: number): string {
   if (number < 10) {
-    return '0' + number;
-  } else {
-    return number.toString();
+    return `0${number}`;
   }
+  return number.toString();
 }

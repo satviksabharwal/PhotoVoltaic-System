@@ -1,5 +1,6 @@
 import express from 'express';
 import type { Request, Response } from 'express';
+import axios from 'axios';
 import {
   verifyToken,
   getUserIdFromtoken,
@@ -9,12 +10,16 @@ import {
   convertToDoubleDigit,
 } from '../commonFunctions.js';
 import type { WeatherHistoryResponse } from '../commonFunctions.js';
-import { Product, Project } from '../db/index.js';
-import { v4 as uuidv4 } from 'uuid';
-import axios from 'axios';
-import type { PanelOrientation } from '../models/product.js';
+import { supabaseAdmin } from '../supabaseAdmin.js';
+import { toLegacyProduct } from '../mappers.js';
+import type { PanelOrientation, ProductRow } from '../types.js';
 
 const router = express.Router();
+
+const UNIQUE_VIOLATION = '23505';
+
+/** Module Wp/m² used to derive installed capacity (kWp) from area. */
+const WP_PER_M2 = { mono: 205, poly: 175, thin: 120 } as const;
 
 interface CreateProductBody {
   name: string;
@@ -24,46 +29,57 @@ interface CreateProductBody {
   longitude: number;
   latitude: number;
   project: string;
+  // SolarSense fields (optional; require the solarsense_fields migration).
+  module?: 'mono' | 'poly' | 'thin';
+  mounting?: 'roof' | 'ground' | 'track';
+  losses?: number;
+  tariff?: number;
+}
+
+/** Columns for the optional SolarSense fields, only when the client sent them. */
+function solarSenseColumns(body: CreateProductBody) {
+  return {
+    ...(body.module ? { module_type: body.module, kwp: (body.area * WP_PER_M2[body.module]) / 1000 } : {}),
+    ...(body.mounting ? { mounting: body.mounting } : {}),
+    ...(body.losses !== undefined ? { losses_pct: body.losses } : {}),
+    ...(body.tariff !== undefined ? { tariff: body.tariff } : {}),
+  };
 }
 
 // Define the route for creating a new product
 router.post('/create', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Extract the product data from the request body
-    const {
-      name,
-      orientation,
-      inclination,
-      area,
-      longitude,
-      latitude,
-      project,
-    } = req.body as CreateProductBody;
-
+    const body = req.body as CreateProductBody;
+    const { name, orientation, inclination, area, longitude, latitude, project } = body;
     const user = getUserIdFromtoken(req);
-    const existingProduct = await Product.findOne({ name, user, project });
-    if (existingProduct) {
-      return res.status(400).json({ error: 'Product name already exists!' });
-    }
 
-    const validProject = await Project.findOne({ id: project });
+    // Verify the target project exists and belongs to this user.
+    const { data: validProject, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('id', project)
+      .eq('user_id', user)
+      .maybeSingle();
+    if (projectError) throw projectError;
     if (!validProject) {
-      return res.status(400).json({ error: 'Project not found' });
+      res.status(400).json({ error: 'Project not found' });
+      return;
     }
 
-    // Generate a unique ID using UUID
-    const id = uuidv4();
-    const rawProduct = {
-      id,
-      name,
-      orientation,
-      inclination,
-      area,
-      longitude,
-      latitude,
-      user,
-      project,
-    };
+    // Cheap duplicate check before spending a weather API call; the
+    // unique(project_id, name) constraint is the real guarantee.
+    const { data: existingProduct, error: existingError } = await supabaseAdmin
+      .from('products')
+      .select('id')
+      .eq('project_id', project)
+      .eq('name', name)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existingProduct) {
+      res.status(400).json({ error: 'Product name already exists!' });
+      return;
+    }
+
     const currentdate = new Date();
     const fromDate = `${currentdate.getFullYear()}-${convertToDoubleDigit(
       currentdate.getMonth() + 1
@@ -78,8 +94,8 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       'https://api.weatherbit.io/v2.0/history/hourly',
       {
         params: {
-          lat: rawProduct.latitude,
-          lon: rawProduct.longitude,
+          lat: latitude,
+          lon: longitude,
           start_date: fromDate,
           end_date: endDate,
           key: weathertoken,
@@ -88,7 +104,8 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
     );
     if (!weatherResponse.data.data || !weatherResponse.data.data.length) {
       console.error('Issue with weather API', weatherResponse?.data?.data);
-      return res.status(502).json({ error: 'Issue with weather API' });
+      res.status(502).json({ error: 'Issue with weather API' });
+      return;
     }
 
     const filteredData = weatherResponse.data.data.filter(
@@ -99,7 +116,7 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
     if (filteredData?.length) {
       const opitionalSolarVal = getRandomNumber();
       pvValue = await calculateElectricityProduced(
-        rawProduct,
+        { area },
         filteredData[0],
         opitionalSolarVal
       );
@@ -109,15 +126,30 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
       const hoursTs = dateTs.getHours();
       powerPeak = (pvValue * 1000) / hoursTs;
     }
-    // Create a new product instance
-    const product = new Product({ ...rawProduct, pvValue, powerPeak });
 
-    // Save the product to the database
-    await product.save();
+    const { error: insertError } = await supabaseAdmin.from('products').insert({
+      project_id: project,
+      user_id: user,
+      name,
+      orientation,
+      inclination,
+      area,
+      latitude,
+      longitude,
+      pv_value: pvValue ?? null,
+      power_peak: powerPeak ?? null,
+      ...solarSenseColumns(body),
+    });
+    if (insertError) {
+      if (insertError.code === UNIQUE_VIOLATION) {
+        res.status(400).json({ error: 'Product name already exists!' });
+        return;
+      }
+      throw insertError;
+    }
 
     res.json({ message: 'Product created successfully' });
   } catch (error) {
-    // Handle any errors that occur during the process
     console.error('Error in POST product API:', error);
     res.status(500).json({ error: 'Failed to create the product' });
   }
@@ -126,15 +158,21 @@ router.post('/create', verifyToken, async (req: Request, res: Response) => {
 // Get All Products API
 router.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Retrieve all Products from the database
     const user = getUserIdFromtoken(req);
     const project = req.query.projectId as string | undefined;
-    const options: Record<string, unknown> = { user };
+
+    let query = supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('user_id', user)
+      .order('created_at', { ascending: true });
     if (project) {
-      options['project'] = project;
+      query = query.eq('project_id', project);
     }
-    const products = await Product.find(options);
-    res.json(products);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json((data as ProductRow[]).map(toLegacyProduct));
   } catch (error) {
     console.error('Error in get all products API:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -144,14 +182,21 @@ router.get('/', verifyToken, async (req: Request, res: Response) => {
 // Get Individual Product API
 router.get('/item', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Retrieve all Products from the database
     const user = getUserIdFromtoken(req);
     const product = req.query.productId as string | undefined;
-    let products;
-    if (product) {
-      products = await Product.findOne({ user, id: product });
+
+    if (!product) {
+      res.json(null);
+      return;
     }
-    res.json(products);
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('user_id', user)
+      .eq('id', product)
+      .maybeSingle();
+    if (error) throw error;
+    res.json(data ? toLegacyProduct(data as ProductRow) : null);
   } catch (error) {
     console.error('Error in getting a Product API:', error);
     res.status(500).json({ message: 'Internal server error' });
@@ -161,46 +206,38 @@ router.get('/item', verifyToken, async (req: Request, res: Response) => {
 // Update Product API
 router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Extract Product ID from the request parameters
     const { id } = req.params;
-
-    // Extract updated Product details from the request body
-    const { name, orientation, inclination, area, longitude, latitude } =
-      req.body as Omit<CreateProductBody, 'project'>;
-
+    const body = req.body as Omit<CreateProductBody, 'project'>;
+    const { name, orientation, inclination, area, longitude, latitude } = body;
     const user = getUserIdFromtoken(req);
 
-    const haveAccess = await Product.findOne({ user, id });
-    if (!haveAccess) {
-      return res.status(400).json({ error: 'Unauthorized' });
-    }
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .update({
+        name,
+        orientation,
+        inclination,
+        area,
+        longitude,
+        latitude,
+        ...solarSenseColumns(body as CreateProductBody),
+      })
+      .eq('id', id)
+      .eq('user_id', user)
+      .select();
 
-    const existingProduct = await Product.findOne({
-      name,
-      project: haveAccess.project,
-    });
-    if (existingProduct) {
-      return res.status(400).json({ error: 'Product name already exists!' });
-    }
-
-    // Update the Product name using the updateOne method
-    const result = await Product.updateOne(
-      { id },
-      {
-        $set: {
-          name,
-          orientation,
-          inclination,
-          area,
-          longitude,
-          latitude,
-        },
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) {
+        res.status(400).json({ error: 'Product name already exists!' });
+        return;
       }
-    );
-
-    if (result.matchedCount === 0) {
-      return res.status(404).json({ message: 'Product not found' });
+      throw error;
     }
+    if (!data?.length) {
+      res.status(400).json({ error: 'Unauthorized' });
+      return;
+    }
+
     res.json({ message: 'Product updated successfully' });
   } catch (error) {
     console.error('Error in update Product API:', error);
@@ -208,22 +245,22 @@ router.put('/update/:id', verifyToken, async (req: Request, res: Response) => {
   }
 });
 
-// Delete Product API
+// Delete Product API — pv_readings cascade via foreign keys.
 router.delete('/delete/:id', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Extract product ID from the request parameters
     const { id } = req.params;
     const user = getUserIdFromtoken(req);
-    const haveAccess = await Product.findOne({ user, id });
-    if (!haveAccess) {
-      return res.status(400).json({ error: 'Unauthorized' });
-    }
 
-    // Delete the product by ID
-    const result = await Product.deleteOne({ id });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: 'Product not found' });
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user)
+      .select();
+    if (error) throw error;
+    if (!data?.length) {
+      res.status(400).json({ error: 'Unauthorized' });
+      return;
     }
 
     res.json({ message: 'Product deleted successfully' });
