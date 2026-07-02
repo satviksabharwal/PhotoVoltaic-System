@@ -50,6 +50,8 @@ interface AuthFieldProps {
   min?: string | number;
   max?: string | number;
   onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  /** Non-editable display field (muted background, no focus ring purpose). */
+  readOnly?: boolean;
   /** Render this field as a password whose visibility is driven by `visible`. */
   isPassword?: boolean;
   /** Current password visibility. */
@@ -71,6 +73,7 @@ export default function AuthField({
   min,
   max,
   onChange,
+  readOnly = false,
   isPassword = false,
   visible = false,
   onToggleVisible,
@@ -96,7 +99,11 @@ export default function AuthField({
           min={min}
           max={max}
           onChange={onChange}
-          style={showEye ? { paddingRight: 48 } : undefined}
+          readOnly={readOnly}
+          style={{
+            ...(showEye ? { paddingRight: 48 } : {}),
+            ...(readOnly ? { background: '#FAF8F3', color: '#7A7362' } : {}),
+          }}
         />
         {showEye && (
           <IconButton

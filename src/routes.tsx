@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Page404 from './pages/Page404';
 import DashboardAppPage from './pages/DashboardAppPage';
-import ProfileSetting from './pages/ProfileSetting';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProjectPage from './pages/ProjectPage';
@@ -25,7 +25,6 @@ export default function Router() {
       children: [
         { element: <Navigate to="/dashboard/app" />, index: true },
         { path: 'app', element: <DashboardAppPage /> },
-        { path: 'profile-setting', element: <ProfileSetting /> },
       ],
     },
     // Redesigned SolarSense pages — top-bar shell, no sidebar. Same URLs as before.
@@ -36,6 +35,7 @@ export default function Router() {
         { path: 'projects', element: <ProjectPage /> },
         { path: 'projects/:projectId', element: <ProjectDetailPage /> },
         { path: 'projects/:projectId/:productId', element: <ProductVisualization /> },
+        { path: 'account-settings', element: <AccountSettingsPage /> },
       ],
     },
     {

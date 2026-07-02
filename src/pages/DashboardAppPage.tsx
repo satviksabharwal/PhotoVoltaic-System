@@ -106,7 +106,7 @@ export default function DashboardAppPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard | PV System </title>
+        <title> Dashboard | SolarSense </title>
       </Helmet>
 
       <Container maxWidth={false}>

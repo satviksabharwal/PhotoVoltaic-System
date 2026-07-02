@@ -138,7 +138,7 @@ const ProductVisualization = () => {
   return (
     <>
       <Helmet>
-        <title>{`${state}`}</title>
+        <title>{`${state} | SolarSense`}</title>
       </Helmet>
       <Container maxWidth={false}>
         <div style={{ display: "flex" }}>

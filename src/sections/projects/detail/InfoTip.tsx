@@ -2,13 +2,6 @@ import { useId } from 'react';
 import { Box } from '@mui/material';
 import { solar } from '../../../theme/solar';
 
-// ----------------------------------------------------------------------
-// Small "?" help icon with a popover, per the design's info-tooltip
-// pattern. Rendered as a real button and shown on focus as well as hover,
-// so it works with a keyboard and on touch screens. Highlight key words in
-// the tip with <b> — they render in the accent colour.
-// ----------------------------------------------------------------------
-
 interface InfoTipProps {
   tip: React.ReactNode;
   ariaLabel?: string;
@@ -57,9 +50,7 @@ export default function InfoTip({ tip, ariaLabel = 'More information', align = '
         sx={{
           position: 'absolute',
           bottom: 'calc(100% + 9px)',
-          ...(align === 'center'
-            ? { left: '50%', transform: 'translateX(-50%)' }
-            : { right: '-5px' }),
+          ...(align === 'center' ? { left: '50%', transform: 'translateX(-50%)' } : { right: '-5px' }),
           width: 236,
           background: solar.ink,
           color: '#fff',
@@ -83,9 +74,7 @@ export default function InfoTip({ tip, ariaLabel = 'More information', align = '
             content: '""',
             position: 'absolute',
             top: '100%',
-            ...(align === 'center'
-              ? { left: '50%', transform: 'translateX(-50%)' }
-              : { right: '7px' }),
+            ...(align === 'center' ? { left: '50%', transform: 'translateX(-50%)' } : { right: '7px' }),
             border: '6px solid transparent',
             borderTopColor: solar.ink,
           },
