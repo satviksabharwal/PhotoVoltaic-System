@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// @mui
 import { Box, Link } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,11 +7,8 @@ import { useDispatch } from 'react-redux';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { AppDispatch } from '../../../store/store';
 import { supabase } from '../../../utils/supabase';
-// sections
 import AuthField, { SubmitButton } from '../AuthField';
 import { solar } from '../tokens';
-
-// ----------------------------------------------------------------------
 
 interface LoginFormFields {
   email: string;

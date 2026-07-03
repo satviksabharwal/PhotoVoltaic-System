@@ -13,11 +13,6 @@ import ProjectsEmptyState from '../sections/projects/ProjectsEmptyState';
 import { solar, solarApp } from '../theme/solar';
 import { Project } from '../types/models';
 
-// ----------------------------------------------------------------------
-// SolarSense Projects page: header + filter chips + card grid (create tile
-// first), per the PROJECTS_PAGE design handoff.
-// ----------------------------------------------------------------------
-
 type StatusFilter = 'all' | 'active' | 'inactive';
 
 const FILTERS: { key: StatusFilter; label: string }[] = [
@@ -46,7 +41,6 @@ export default function ProjectPage() {
 
   useEffect(() => {
     fetchProjects();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const counts = useMemo(

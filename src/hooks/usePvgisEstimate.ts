@@ -24,7 +24,6 @@ export interface PvgisEstimateInput {
 export interface PvgisEstimateResult {
   kwp: number;
   annualKwh: number;
-  /** Real per-month production (Jan–Dec) in kWh. */
   monthlyKwh: number[];
 }
 

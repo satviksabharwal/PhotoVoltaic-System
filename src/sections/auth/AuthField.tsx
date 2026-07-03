@@ -129,7 +129,6 @@ export default function AuthField({
   );
 }
 
-// Primary yellow CTA (Sign in / Create account).
 export const SubmitButton = styled('button')({
   width: '100%',
   height: 52,
