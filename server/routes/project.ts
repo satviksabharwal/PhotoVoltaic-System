@@ -2,9 +2,8 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import { verifyToken, getUserIdFromtoken } from '../commonFunctions.js';
 import { supabaseAdmin } from '../supabaseAdmin.js';
-import { generateAndSendPDF } from '../genrateDocument.js';
 import { toLegacyProject, readingsToLegacyPvDetails } from '../mappers.js';
-import type { ProjectRow, ProductRow, ProfileRow, PvReadingRow } from '../types.js';
+import type { ProjectRow, ProductRow, PvReadingRow } from '../types.js';
 
 const router = express.Router();
 
@@ -215,118 +214,6 @@ router.get('/getPVData', verifyToken, async (req: Request, res: Response) => {
       return;
     }
     res.json(details[0] ?? null);
-  } catch (error) {
-    console.error('Error in get pv details API:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// Generate project report API
-router.get('/generateApi/:id', verifyToken, async (req: Request, res: Response) => {
-  try {
-    const user = getUserIdFromtoken(req);
-    const project = req.params.id;
-
-    const { data: projectDetails, error: projectError } = await supabaseAdmin
-      .from('projects')
-      .select('*')
-      .eq('id', project)
-      .eq('user_id', user)
-      .maybeSingle();
-    if (projectError) throw projectError;
-    if ((projectDetails as ProjectRow | null)?.report_generated) {
-      res.status(400).json({ message: 'Report already generated' });
-      return;
-    }
-
-    const { data: readings, error: readingsError } = await supabaseAdmin
-      .from('pv_readings')
-      .select('*')
-      .eq('project_id', project)
-      .eq('user_id', user)
-      .order('recorded_at', { ascending: true });
-    if (readingsError) throw readingsError;
-
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', user)
-      .maybeSingle();
-    if (profileError) throw profileError;
-
-    if (profile) {
-      const pvDetails = readingsToLegacyPvDetails(readings as PvReadingRow[]);
-      generateAndSendPDF(pvDetails, (profile as ProfileRow).email, projectDetails as ProjectRow | null)
-        .then(async () => {
-          console.log('PDF sent successfully!');
-          const { error } = await supabaseAdmin
-            .from('projects')
-            .update({ report_generated: true })
-            .eq('id', project);
-          if (!error) {
-            res.json({ message: `Report sent to email` });
-          }
-        })
-        .catch((error) => {
-          console.error('Error sending PDF:', error);
-        });
-    }
-  } catch (error) {
-    console.error('Error in get pv details API:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// Generate product report API
-router.get('/generateApi/product/:id', verifyToken, async (req: Request, res: Response) => {
-  try {
-    const user = getUserIdFromtoken(req);
-    const product = req.params.id;
-
-    const { data: productDetails, error: productError } = await supabaseAdmin
-      .from('products')
-      .select('*')
-      .eq('id', product)
-      .eq('user_id', user)
-      .maybeSingle();
-    if (productError) throw productError;
-    if ((productDetails as ProductRow | null)?.report_generated) {
-      res.status(400).json({ message: 'Report already generated' });
-      return;
-    }
-
-    const { data: readings, error: readingsError } = await supabaseAdmin
-      .from('pv_readings')
-      .select('*')
-      .eq('product_id', product)
-      .eq('user_id', user)
-      .order('recorded_at', { ascending: true });
-    if (readingsError) throw readingsError;
-
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', user)
-      .maybeSingle();
-    if (profileError) throw profileError;
-
-    if (profile) {
-      const pvDetails = readingsToLegacyPvDetails(readings as PvReadingRow[]);
-      generateAndSendPDF(pvDetails, (profile as ProfileRow).email, productDetails as ProductRow | null)
-        .then(async () => {
-          console.log('PDF sent successfully!');
-          const { error } = await supabaseAdmin
-            .from('products')
-            .update({ report_generated: true })
-            .eq('id', product);
-          if (!error) {
-            res.json({ message: `Report sent to email` });
-          }
-        })
-        .catch((error) => {
-          console.error('Error sending PDF:', error);
-        });
-    }
   } catch (error) {
     console.error('Error in get pv details API:', error);
     res.status(500).json({ message: 'Internal server error' });

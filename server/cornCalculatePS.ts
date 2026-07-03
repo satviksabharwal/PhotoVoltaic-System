@@ -1,11 +1,9 @@
 import cron from 'node-cron';
 import moment from 'moment';
 import { supabaseAdmin } from './supabaseAdmin.js';
-import { generateAndSendPDF } from './genrateDocument.js';
-import { readingsToLegacyPvDetails } from './mappers.js';
 import { fetchCurrentGti, hourlyEnergyKwh } from './solar.js';
 import type { PanelConfig } from './solar.js';
-import type { ProductRow, ProfileRow, ProjectRow, PvReadingRow } from './types.js';
+import type { ProductRow } from './types.js';
 
 function toPanelConfig(product: ProductRow): PanelConfig {
   return {
@@ -33,8 +31,6 @@ export const executeCorn = () => {
 
       (products as ProductRow[]).forEach(async (productData) => {
         try {
-          await autoGenrateReportFor30Days(productData);
-
           const panel = toPanelConfig(productData);
           const gti = await fetchCurrentGti(panel);
           if (gti == null) {
@@ -80,56 +76,6 @@ export const executeCorn = () => {
       console.error('Error occurred during electricity calculation:', error);
     }
   });
-};
-
-const autoGenrateReportFor30Days = async (productData: ProductRow) => {
-  const { data: projectDetails, error } = await supabaseAdmin
-    .from('projects')
-    .select('*')
-    .eq('id', productData.project_id)
-    .maybeSingle();
-  if (error) {
-    console.error('Error loading project for 30-day report:', error);
-    return;
-  }
-  const project = projectDetails as ProjectRow | null;
-  if (project?.created_at && !project.report_generated) {
-    const after30Days = moment(project.created_at).add(31, 'days').format('YYYY-MM-DD');
-    const today = moment().format('YYYY-MM-DD');
-    if (after30Days === today) {
-      const { data: readings, error: readingsError } = await supabaseAdmin
-        .from('pv_readings')
-        .select('*')
-        .eq('project_id', productData.project_id)
-        .eq('user_id', productData.user_id)
-        .order('recorded_at', { ascending: true });
-      if (readingsError) {
-        console.error('Error loading readings for 30-day report:', readingsError);
-        return;
-      }
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .eq('id', productData.user_id)
-        .maybeSingle();
-      if (!profile) {
-        console.error('User profile not found for 30-day report:', productData.user_id);
-        return;
-      }
-      const pvDetails = readingsToLegacyPvDetails(readings as PvReadingRow[]);
-      generateAndSendPDF(pvDetails, (profile as ProfileRow).email, project)
-        .then(async () => {
-          console.log('PDF sent successfully!');
-          await supabaseAdmin
-            .from('projects')
-            .update({ report_generated: true })
-            .eq('id', productData.project_id);
-        })
-        .catch((error) => {
-          console.error('Error sending PDF:', error);
-        });
-    }
-  }
 };
 
 console.log('Cron job started');

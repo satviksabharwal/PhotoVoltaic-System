@@ -79,7 +79,7 @@ Energy per hour: `kWh = GTI (W/m²) × area (m²) × module efficiency × (1 −
 
 **Frontend** — React 18 · TypeScript (strict) · Vite · MUI v5 styled with custom SolarSense design tokens · Redux (+ redux-persist) · React Router 6 · Leaflet / react-leaflet · axios (Supabase session token attached via interceptor)
 
-**Backend** — Node.js + Express in TypeScript (NodeNext ESM, `tsx` in dev) · Supabase JS (service-role) · node-cron · PDFKit + Nodemailer (report generation)
+**Backend** — Node.js + Express in TypeScript (NodeNext ESM, `tsx` in dev) · Supabase JS (service-role) · node-cron
 
 **Database** — Supabase Postgres: `profiles`, `projects`, `products` (sites), `pv_readings` (hourly), with RLS policies and a signup trigger. One idempotent baseline migration sets up everything: [`supabase/migrations`](supabase/migrations).
 
@@ -139,7 +139,7 @@ Supabase Postgres         └── Nominatim  (reverse geocoding at site save)
 │   ├── routes/              # project / product / solar / user
 │   ├── solar.ts             # Open-Meteo + PVGIS + energy math
 │   ├── geocode.ts           # Nominatim reverse geocoding
-│   └── cornCalculatePS.ts   # hourly readings cron + 30-day report
+│   └── cornCalculatePS.ts   # hourly readings cron
 └── supabase/migrations/     # single baseline schema
 ```
 
