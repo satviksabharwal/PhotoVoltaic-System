@@ -99,7 +99,7 @@ Supabase Postgres         └── Nominatim  (reverse geocoding at site save)
 
 ## Getting started
 
-**Prerequisites:** Node 20+, a free [Supabase](https://supabase.com/) project.
+**Prerequisites:** Node 22+, a free [Supabase](https://supabase.com/) project.
 
 1. **Database** — in the Supabase dashboard, open *SQL Editor* and run [`supabase/migrations/20260703000000_schema.sql`](supabase/migrations/20260703000000_schema.sql). One file, whole schema.
 

@@ -12,6 +12,9 @@
   },
   "author": "Satvik Sabharwal",
   "license": "ISC",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
     "axios": "^1.4.0",
