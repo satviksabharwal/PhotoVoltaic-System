@@ -9,6 +9,7 @@ import ThemeProvider from "./theme";
 // components
 import ScrollToTop from "./components/scroll-to-top";
 import { selectCurrentUser } from "./store/user/user.selector";
+import useAuthSync from "./hooks/useAuthSync";
 // ----------------------------------------------------------------------
 
 export default function App() {
@@ -16,27 +17,18 @@ export default function App() {
   const currentUser = useSelector(selectCurrentUser);
   const location = useLocation();
 
+  // Keep redux in lockstep with the Supabase session (login, logout,
+  // expiry, other tabs). RequireAuth in routes.tsx reacts to the result.
+  useAuthSync();
+
+  // Signed-in users have no business on the guest pages; protected routes
+  // are guarded at render time by RequireAuth in routes.tsx.
   useEffect(() => {
-    if (
-      (location.pathname === "/login" ||
-        location.pathname === "/register" ||
-        location.pathname === "/forgotpassword" ||
-        location.pathname === "/404") &&
-      currentUser?.email !== undefined
-    ) {
+    const guestPages = ["/login", "/register", "/forgotpassword", "/404"];
+    if (guestPages.includes(location.pathname) && currentUser?.email !== undefined) {
       navigate("/");
-    } else if (currentUser === undefined || currentUser?.email === undefined) {
-      if (
-        (location.pathname === "/login" && currentUser?.email === undefined) ||
-        (location.pathname === "/register" && currentUser?.email === undefined) ||
-        (location.pathname === "/forgotpassword" && currentUser?.email === undefined) ||
-        (location.pathname === "/404" && currentUser?.email === undefined)
-      ) {
-        navigate(location.pathname);
-      } else navigate("/login");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, currentUser?.email]);
+  }, [location.pathname, currentUser?.email, navigate]);
 
   return (
     <ThemeProvider>

@@ -1,6 +1,9 @@
+import { ReactElement } from 'react';
+import { useSelector } from 'react-redux';
 import { Navigate, useRoutes } from 'react-router-dom';
 // layouts
 import SolarSenseLayout from './layouts/solarsense/SolarSenseLayout';
+import { selectCurrentUser } from './store/user/user.selector';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -12,14 +15,22 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import InsightsPage from './pages/InsightsPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
 
-// ----------------------------------------------------------------------
+function RequireAuth({ children }: { children: ReactElement }) {
+  const currentUser = useSelector(selectCurrentUser);
+  if (!currentUser?.email) return <Navigate to="/login" replace />;
+  return children;
+}
 
 export default function Router() {
   const routes = useRoutes([
     // Signed-in app: Projects is the home page.
     {
       path: '/',
-      element: <SolarSenseLayout />,
+      element: (
+        <RequireAuth>
+          <SolarSenseLayout />
+        </RequireAuth>
+      ),
       children: [
         { element: <ProjectPage />, index: true },
         { path: 'projects/:projectId', element: <ProjectDetailPage /> },

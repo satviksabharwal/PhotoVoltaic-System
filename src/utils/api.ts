@@ -48,4 +48,16 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message;
+    if (status === 401 || (status === 403 && message === 'Invalid token')) {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
