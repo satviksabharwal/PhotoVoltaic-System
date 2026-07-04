@@ -2,12 +2,9 @@ import 'dotenv/config';
 import type { Request, Response, NextFunction } from 'express';
 import { supabaseAdmin } from './supabaseAdmin.js';
 
-// Fields attached to the request by the verifyToken middleware.
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      /** Supabase auth user id (UUID) — application data is keyed by this. */
       userId?: string;
       userEmail?: string;
     }
