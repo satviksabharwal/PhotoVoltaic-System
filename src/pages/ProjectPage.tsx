@@ -1,15 +1,16 @@
 import { Helmet } from 'react-helmet-async';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// @mui
 import { Box, Modal, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// components
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api';
 import AuthField, { SubmitButton } from '../sections/auth/AuthField';
 import ProjectCard from '../sections/projects/ProjectCard';
 import ProjectsEmptyState from '../sections/projects/ProjectsEmptyState';
+import ProjectsErrorState from '../sections/projects/ProjectsErrorState';
+import ProjectsLoadingState from '../sections/projects/ProjectsLoadingState';
 import { solar, solarApp } from '../theme/solar';
 import { Project } from '../types/models';
 
@@ -23,43 +24,52 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 
 export default function ProjectPage() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectsLoaded, setProjectsLoaded] = useState<boolean>(false);
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
+  const queryClient = useQueryClient();
 
-  const fetchProjects = async () => {
-    try {
+  const { data, isPending, isError, isFetching, error, refetch } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
       const response = await api.get<Project[]>('/project');
-      setProjects(response.data ?? []);
-      setProjectsLoaded(true);
-    } catch (error) {
-      toast.error('Could not load projects');
-    }
-  };
+      return response.data ?? [];
+    },
+  });
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  const createProject = useMutation({
+    mutationFn: (name: string) => api.post('/project/create', { name }),
+    onSuccess: (response: { data: { message: string } }) => {
+      toast.success(response.data.message);
+      closeCreate();
+      return queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+    onError: (error) => {
+      const message = (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
+      toast.error(message);
+    },
+  });
 
   const counts = useMemo(
     () => ({
-      all: projects.length,
-      active: projects.filter((project) => project.active ?? true).length,
-      inactive: projects.filter((project) => !(project.active ?? true)).length,
+      all: data?.length,
+      active: data?.filter((project: Project) => project.active ?? true).length,
+      inactive: data?.filter((project: Project) => !(project.active ?? true)).length,
     }),
-    [projects]
+    [data]
   );
 
   const visibleProjects = useMemo(
     () =>
-      projects.filter((project) => {
+      data?.filter((project: Project) => {
         if (filter === 'all') return true;
         return (project.active ?? true) === (filter === 'active');
       }),
-    [projects, filter]
+    [data, filter]
   );
+
+  const showError = isError && !isFetching;
+  const showEmpty = !isError && !isPending && data?.length === 0;
 
   const closeCreate = () => {
     setCreateOpen(false);
@@ -68,16 +78,7 @@ export default function ProjectPage() {
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    try {
-      const response = await api.post('/project/create', { name });
-      toast.success(response.data.message);
-      closeCreate();
-      fetchProjects();
-    } catch (error) {
-      const message =
-        (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
-      toast.error(message);
-    }
+    createProject.mutate(name);
   };
 
   const openProject = (project: Project) => {
@@ -147,6 +148,7 @@ export default function ProjectPage() {
                 component="button"
                 type="button"
                 aria-pressed={on}
+                disabled={isPending || isError}
                 onClick={() => setFilter(key)}
                 sx={{
                   display: 'flex',
@@ -164,125 +166,136 @@ export default function ProjectPage() {
                   cursor: 'pointer',
                   transition: 'all .14s',
                   '&:hover': { borderColor: on ? solar.ink : '#D8D0BE' },
+                  '&:disabled': { pointerEvents: 'none' },
                 }}
               >
                 {label}
-                <Box component="span" sx={{ fontSize: '12px', fontWeight: 700, color: on ? solar.accent : solarApp.chipCount }}>
-                  {counts[key]}
+                <Box
+                  component="span"
+                  sx={{ fontSize: '12px', fontWeight: 700, color: on ? solar.accent : solarApp.chipCount }}
+                >
+                  {isPending || isError ? '—' : counts[key]}
                 </Box>
               </Box>
             );
           })}
         </Box>
 
-        {/* Card grid — no-data hero when the account has zero projects,
-            otherwise the create tile + cards (with a filtered-empty notice). */}
-        {projectsLoaded && projects.length === 0 ? (
-          <ProjectsEmptyState onCreate={() => setCreateOpen(true)} />
-        ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
-            gap: '22px',
-          }}
-        >
-          {/* Create tile */}
+        {/* Card grid area — four modes per the design handoffs: error tile,
+            no-data hero, or the grid (with skeletons while loading/retrying). */}
+        {showError && <ProjectsErrorState error={error} onRetry={() => refetch()} />}
+        {showEmpty && <ProjectsEmptyState onCreate={() => setCreateOpen(true)} />}
+        {!showError && !showEmpty && (
           <Box
-            role="button"
-            tabIndex={0}
-            onClick={() => setCreateOpen(true)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                setCreateOpen(true);
-              }
-            }}
+            aria-busy={isPending || isError}
             sx={{
-              border: '2px dashed #E0D8C4',
-              borderRadius: '18px',
-              minHeight: 238,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              cursor: 'pointer',
-              transition: 'all .16s',
-              '&:hover, &:focus-visible': { borderColor: solar.accent, background: '#FFFCF3' },
-              '&:hover .create-icon, &:focus-visible .create-icon': { background: '#FFF3D0' },
-              '&:focus-visible': { outline: `2px solid ${solar.accent}`, outlineOffset: 2 },
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+              gap: '22px',
             }}
           >
+            {/* Create tile */}
             <Box
-              className="create-icon"
-              sx={{
-                width: 52,
-                height: 52,
-                borderRadius: '14px',
-                background: '#F4EFE2',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '26px',
-                color: solar.accentDeep,
-                transition: 'background .16s',
+              role="button"
+              tabIndex={0}
+              onClick={() => setCreateOpen(true)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setCreateOpen(true);
+                }
               }}
-            >
-              ＋
-            </Box>
-            <Box sx={{ fontFamily: solar.fontDisplay, fontSize: '15px', fontWeight: 600, color: solarApp.chipText }}>
-              Create new project
-            </Box>
-            <Box sx={{ fontSize: '12.5px', color: solarApp.label, mt: '-6px' }}>Start tracking a new location</Box>
-          </Box>
-
-          {visibleProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} onOpen={() => openProject(project)} />
-          ))}
-
-          {/* Projects exist, but none match the current filter */}
-          {projectsLoaded && visibleProjects.length === 0 && (
-            <Box
               sx={{
-                gridColumn: { xs: 'auto', sm: '2 / -1' },
+                border: '2px dashed #E0D8C4',
+                borderRadius: '18px',
+                minHeight: 238,
                 display: 'flex',
                 flexDirection: 'column',
+                alignItems: 'center',
                 justifyContent: 'center',
-                alignItems: 'flex-start',
-                gap: '5px',
-                p: '6px 4px',
-                minHeight: 180,
+                gap: '12px',
+                cursor: 'pointer',
+                transition: 'all .16s',
+                '&:hover, &:focus-visible': { borderColor: solar.accent, background: '#FFFCF3' },
+                '&:hover .create-icon, &:focus-visible .create-icon': { background: '#FFF3D0' },
+                '&:focus-visible': { outline: `2px solid ${solar.accent}`, outlineOffset: 2 },
               }}
             >
-              <Typography component="h4" sx={{ fontFamily: solar.fontDisplay, fontSize: '17px', fontWeight: 600, color: solar.ink, m: 0 }}>
-                No {filter} projects
-              </Typography>
-              <Typography sx={{ fontSize: '13.5px', color: solar.muted, m: 0 }}>
-                None of your projects are {filter} right now.
-              </Typography>
               <Box
-                component="button"
-                type="button"
-                onClick={() => setFilter('all')}
+                className="create-icon"
                 sx={{
-                  mt: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  fontFamily: solar.fontBody,
+                  width: 52,
+                  height: 52,
+                  borderRadius: '14px',
+                  background: '#F4EFE2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '26px',
                   color: solar.accentDeep,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  p: 0,
-                  '&:hover': { textDecoration: 'underline' },
+                  transition: 'background .16s',
                 }}
               >
-                View all projects
+                ＋
               </Box>
+              <Box sx={{ fontFamily: solar.fontDisplay, fontSize: '15px', fontWeight: 600, color: solarApp.chipText }}>
+                Create new project
+              </Box>
+              <Box sx={{ fontSize: '12.5px', color: solarApp.label, mt: '-6px' }}>Start tracking a new location</Box>
             </Box>
-          )}
-        </Box>
+
+            {(isPending || isError) && <ProjectsLoadingState />}
+
+            {!isError &&
+              visibleProjects?.map((project) => (
+                <ProjectCard key={project.id} project={project} onOpen={() => openProject(project)} />
+              ))}
+
+            {/* Projects exist, but none match the current filter */}
+            {!isPending && !isError && visibleProjects?.length === 0 && (
+              <Box
+                sx={{
+                  gridColumn: { xs: 'auto', sm: '2 / -1' },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  gap: '5px',
+                  p: '6px 4px',
+                  minHeight: 180,
+                }}
+              >
+                <Typography
+                  component="h4"
+                  sx={{ fontFamily: solar.fontDisplay, fontSize: '17px', fontWeight: 600, color: solar.ink, m: 0 }}
+                >
+                  No {filter} projects
+                </Typography>
+                <Typography sx={{ fontSize: '13.5px', color: solar.muted, m: 0 }}>
+                  None of your projects are {filter} right now.
+                </Typography>
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => setFilter('all')}
+                  sx={{
+                    mt: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    fontFamily: solar.fontBody,
+                    color: solar.accentDeep,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    p: 0,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  View all projects
+                </Box>
+              </Box>
+            )}
+          </Box>
         )}
       </Box>
 
@@ -305,7 +318,14 @@ export default function ProjectPage() {
           <Typography
             id="create-project-title"
             component="h2"
-            sx={{ fontFamily: solar.fontDisplay, fontSize: '22px', fontWeight: 700, letterSpacing: '-0.01em', m: 0, color: solar.ink }}
+            sx={{
+              fontFamily: solar.fontDisplay,
+              fontSize: '22px',
+              fontWeight: 700,
+              letterSpacing: '-0.01em',
+              m: 0,
+              color: solar.ink,
+            }}
           >
             Create new project
           </Typography>

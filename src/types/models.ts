@@ -1,5 +1,4 @@
 // Shared domain models, mirroring the backend API shapes (server/mappers.ts).
-// ----------------------------------------------------------------------
 
 /** The authenticated user as stored in redux (subset returned by the auth API). */
 export interface CurrentUser {
@@ -7,7 +6,6 @@ export interface CurrentUser {
   tokenId?: string;
   displayName?: string;
   photoURL?: string;
-  /** Allow additional fields returned by the API without losing type-safety on the known ones. */
   [key: string]: unknown;
 }
 
@@ -19,14 +17,9 @@ export interface Project {
   name: string;
   isReportGeneratd?: boolean;
   createdDate?: string;
-  /**
-   * Location rolled up from the project's sites by the list endpoint
-   * (city → state → country → "N countries").
-   */
   autoLocation?: string | null;
   active?: boolean;
   updatedAt?: string;
-  /** Card aggregates computed by the list endpoint. */
   sites?: number;
   capacity?: number;
 }
@@ -45,9 +38,7 @@ export interface Product {
   mounting?: MountingType;
   losses?: number;
   tariff?: number | null;
-  /** Installed capacity, computed server-side from area × module Wp/m². */
   kwp?: number | null;
-  /** Authoritative yearly output estimate (kWh) from PVGIS; null if unavailable. */
   estAnnualKwh?: number | null;
   longitude: number;
   latitude: number;

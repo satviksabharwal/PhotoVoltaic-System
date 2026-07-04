@@ -17,12 +17,8 @@ export default function App() {
   const currentUser = useSelector(selectCurrentUser);
   const location = useLocation();
 
-  // Keep redux in lockstep with the Supabase session (login, logout,
-  // expiry, other tabs). RequireAuth in routes.tsx reacts to the result.
   useAuthSync();
 
-  // Signed-in users have no business on the guest pages; protected routes
-  // are guarded at render time by RequireAuth in routes.tsx.
   useEffect(() => {
     const guestPages = ["/login", "/register", "/forgotpassword", "/404"];
     if (guestPages.includes(location.pathname) && currentUser?.email !== undefined) {
