@@ -8,7 +8,16 @@ import { ModuleType, MountingType, PanelOrientation } from '../types/models';
 
 export const WP_PER_M2: Record<ModuleType, number> = { mono: 205, poly: 175, thin: 120 };
 
+/** Northern-hemisphere azimuth factors; N and S swap roles below the equator. */
 const ORIENTATION_FACTOR: Record<PanelOrientation, number> = { S: 1, E: 0.84, W: 0.84, N: 0.62 };
+
+function orientationFactor(orientation: PanelOrientation, signedLat: number): number {
+  if (signedLat < 0) {
+    if (orientation === 'N') return ORIENTATION_FACTOR.S;
+    if (orientation === 'S') return ORIENTATION_FACTOR.N;
+  }
+  return ORIENTATION_FACTOR[orientation];
+}
 
 const MOUNTING_FACTOR: Record<MountingType, number> = { track: 1.25, ground: 1.03, roof: 1 };
 
@@ -68,18 +77,18 @@ export function monthlyDistribution(annualKwh: number, lat?: number): number[] {
 export function estimateOutput(input: EstimateInput): Estimate | null {
   if (!input.area || input.area <= 0) return null;
 
-  const lat = Math.abs(input.lat ?? 0) || 50;
+  const signedLat = input.lat ?? 50;
+  const lat = Math.abs(signedLat) || 50;
   const kwp = (input.area * WP_PER_M2[input.module]) / 1000;
   const optTilt = optimalTilt(lat);
   const tiltFactor = 1 - Math.abs(input.tilt - optTilt) / 130;
   const lossFactor = 1 - input.losses / 100;
+  // A flat panel has no azimuth: fade the orientation effect in with tilt
+  // (none at 0°, full weight from ~35° up).
+  const azimuthWeight = Math.min(1, input.tilt / 35);
+  const azimuthFactor = 1 - (1 - orientationFactor(input.orientation, signedLat)) * azimuthWeight;
   const annualKwh =
-    kwp *
-    baseYield(lat) *
-    ORIENTATION_FACTOR[input.orientation] *
-    tiltFactor *
-    MOUNTING_FACTOR[input.mounting] *
-    lossFactor;
+    kwp * baseYield(lat) * azimuthFactor * tiltFactor * MOUNTING_FACTOR[input.mounting] * lossFactor;
 
   const tariff = input.tariff ?? 0;
   return {

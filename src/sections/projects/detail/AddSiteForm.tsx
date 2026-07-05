@@ -4,8 +4,8 @@ import { toast } from 'react-toastify';
 import api from '../../../utils/api';
 import AuthField, { SubmitButton } from '../../auth/AuthField';
 import { solar, solarApp } from '../../../theme/solar';
-import { Product } from '../../../types/models';
-import { optimalTilt } from '../../../utils/solarEstimate';
+import { PanelOrientation, Product } from '../../../types/models';
+import { estimateOutput, optimalTilt } from '../../../utils/solarEstimate';
 import InfoTip from './InfoTip';
 import { SiteFormState } from './siteFormState';
 
@@ -23,6 +23,71 @@ interface AddSiteFormProps {
   editing: Product | null;
   onCancelEdit: () => void;
   onSaved: () => void;
+}
+
+/**
+ * Hemisphere-aware orientation tip. Fixed panels yield most facing the
+ * equator — South above it, North below it. Within ~10° of the equator the
+ * sun passes near-overhead most of the year, so orientation barely moves
+ * the needle and a low tilt matters more.
+ */
+function orientationTipFor(latitude: number): { bold?: string; tail: string } {
+  if (Number.isNaN(latitude)) {
+    return { tail: 'panels yield most facing the equator — pin a location for a tailored tip.' };
+  }
+  if (Math.abs(latitude) < 10) {
+    return { tail: 'this close to the equator, orientation barely matters — keeping the tilt low counts for more.' };
+  }
+  if (latitude > 0) {
+    return { bold: 'South', tail: 'gives the highest yield at this location (northern hemisphere).' };
+  }
+  return { bold: 'North', tail: 'gives the highest yield at this location (southern hemisphere).' };
+}
+
+const DIRECTION_LABEL: Record<PanelOrientation, string> = { N: 'North', E: 'East', S: 'South', W: 'West' };
+
+function directionNoteFor(latitude: number, form: SiteFormState): { text: string; delta?: string } | null {
+  if (Number.isNaN(latitude)) return null;
+  const equatorDir: PanelOrientation = latitude >= 0 ? 'S' : 'N';
+  if (form.orientation === equatorDir) return null;
+
+  // Direction ratios don't depend on the area, so a nominal fallback keeps
+  // the delta available before the area field is filled in.
+  const area = parseFloat(form.area) || 10;
+  const losses = parseFloat(form.losses) || 0;
+  const kwhFor = (orientation: PanelOrientation) =>
+    estimateOutput({
+      area,
+      lat: latitude,
+      orientation,
+      tilt: form.tilt,
+      module: form.module,
+      mounting: form.mounting,
+      losses,
+    })?.annualKwh ?? 0;
+
+  const bestKwh = kwhFor(equatorDir);
+  let delta: string | undefined;
+  if (bestKwh > 0) {
+    const pct = Math.round(((bestKwh - kwhFor(form.orientation)) / bestKwh) * 100);
+    delta =
+      pct <= 1
+        ? 'At this tilt it makes almost no difference here.'
+        : `≈ ${pct}% less per year than ${DIRECTION_LABEL[equatorDir]} at this spot.`;
+  }
+
+  let text: string;
+  if (form.orientation === 'E') {
+    text = 'East favors morning production — worth it if you use most of your power before noon.';
+  } else if (form.orientation === 'W') {
+    text = 'West shifts production into the afternoon and evening — handy for after-work self-consumption.';
+  } else {
+    text = `${
+      DIRECTION_LABEL[form.orientation]
+    } collects the least sun here — if it's your only option, keep the tilt low.`;
+  }
+
+  return { text, delta };
 }
 
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
@@ -101,6 +166,8 @@ export default function AddSiteForm({
   const tiltHelper = !Number.isNaN(latNumber)
     ? `Optimal for this latitude is about ${optimalTilt(latNumber)}°`
     : 'Set a location for a tilt recommendation';
+  const orientationTip = orientationTipFor(latNumber);
+  const directionNote = directionNoteFor(latNumber, form);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -216,11 +283,25 @@ export default function AddSiteForm({
             />
             <Typography sx={{ fontSize: '12px', color: solarApp.label, mt: '4px' }}>
               Tip:{' '}
-              <Box component="b" sx={{ color: solar.accentDeep, fontWeight: 600 }}>
-                South
-              </Box>{' '}
-              gives the highest yield in the northern hemisphere.
+              {orientationTip.bold && (
+                <>
+                  <Box component="b" sx={{ color: solar.accentDeep, fontWeight: 600 }}>
+                    {orientationTip.bold}
+                  </Box>{' '}
+                </>
+              )}
+              {orientationTip.tail}
             </Typography>
+            {directionNote && (
+              <Typography sx={{ fontSize: '12px', color: solarApp.label, mt: '2px' }}>
+                {directionNote.text}{' '}
+                {directionNote.delta && (
+                  <Box component="b" sx={{ color: solar.accentDeep, fontWeight: 600 }}>
+                    {directionNote.delta}
+                  </Box>
+                )}
+              </Typography>
+            )}
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
