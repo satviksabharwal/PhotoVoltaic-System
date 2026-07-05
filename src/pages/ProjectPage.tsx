@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Modal, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
@@ -27,7 +27,21 @@ export default function ProjectPage() {
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>('');
+  // Card-level actions (single-open pattern): which card's kebab menu,
+  // inline rename, or delete confirm is active. At most one of each.
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [statusId, setStatusId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  // Any click that a card didn't swallow closes the open kebab menu.
+  useEffect(() => {
+    if (menuId === null) return undefined;
+    const closeMenu = () => setMenuId(null);
+    document.addEventListener('click', closeMenu);
+    return () => document.removeEventListener('click', closeMenu);
+  }, [menuId]);
 
   const { data, isPending, isError, isFetching, error, refetch } = useQuery({
     queryKey: ['projects'],
@@ -48,6 +62,69 @@ export default function ProjectPage() {
       const message = (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
       toast.error(message);
     },
+  });
+
+  // Rename applies optimistically — the card shows the new name immediately,
+  // and rolls back if the server rejects it.
+  const renameProject = useMutation({
+    mutationFn: ({ id, name: newName }: { id: string; name: string }) =>
+      api.put(`/project/update/${id}`, { name: newName }),
+    onMutate: async ({ id, name: newName }) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] });
+      const previous = queryClient.getQueryData<Project[]>(['projects']);
+      queryClient.setQueryData<Project[]>(['projects'], (old) =>
+        old?.map((project) => (project.id === id ? { ...project, name: newName } : project))
+      );
+      return { previous };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(['projects'], context.previous);
+      const message =
+        (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
+      toast.error(message);
+    },
+    onSettled: (_response, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
+    },
+  });
+
+  // Status flips optimistically too — the pill and filter chips react
+  // immediately, and roll back if the server rejects the change.
+  const toggleProjectStatus = useMutation({
+    mutationFn: ({ id, active: nextActive }: { id: string; active: boolean }) =>
+      api.put(`/project/update/${id}`, { active: nextActive }),
+    onMutate: async ({ id, active: nextActive }) => {
+      await queryClient.cancelQueries({ queryKey: ['projects'] });
+      const previous = queryClient.getQueryData<Project[]>(['projects']);
+      queryClient.setQueryData<Project[]>(['projects'], (old) =>
+        old?.map((project) => (project.id === id ? { ...project, active: nextActive } : project))
+      );
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(['projects'], context.previous);
+      toast.error('Could not update the project status');
+    },
+    onSettled: (_response, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
+    },
+  });
+
+  const deleteProject = useMutation({
+    mutationFn: (id: string) => api.delete(`/project/delete/${id}`),
+    onSuccess: (response: { data: { message: string } }, id) => {
+      toast.success(response.data.message);
+      // Drop the card immediately, purge the dead project's detail caches,
+      // then refetch to reconcile counts and rollups.
+      queryClient.setQueryData<Project[]>(['projects'], (old) => old?.filter((project) => project.id !== id));
+      queryClient.removeQueries({ queryKey: ['project', id] });
+      queryClient.removeQueries({ queryKey: ['product', id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+    onError: () => toast.error('Could not delete the project'),
+    onSettled: () => setDeleteId(null),
   });
 
   const counts = useMemo(
@@ -248,7 +325,50 @@ export default function ProjectPage() {
 
             {!isError &&
               visibleProjects?.map((project) => (
-                <ProjectCard key={project.id} project={project} onOpen={() => openProject(project)} />
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onOpen={() => openProject(project)}
+                  menuOpen={menuId === project.id}
+                  onMenuToggle={() => setMenuId(menuId === project.id ? null : project.id)}
+                  renaming={renameId === project.id}
+                  onRenameStart={() => {
+                    setMenuId(null);
+                    setDeleteId(null);
+                    setStatusId(null);
+                    setRenameId(project.id);
+                  }}
+                  onRenameCommit={(newName) => {
+                    setRenameId(null);
+                    const trimmed = newName.trim();
+                    // Empty names are rejected — cancel back to the original.
+                    if (trimmed && trimmed !== project.name) {
+                      renameProject.mutate({ id: project.id, name: trimmed });
+                    }
+                  }}
+                  onRenameCancel={() => setRenameId(null)}
+                  deleting={deleteId === project.id}
+                  onDeleteStart={() => {
+                    setMenuId(null);
+                    setRenameId(null);
+                    setStatusId(null);
+                    setDeleteId(project.id);
+                  }}
+                  onDeleteCancel={() => setDeleteId(null)}
+                  onDeleteConfirm={() => deleteProject.mutate(project.id)}
+                  statusConfirm={statusId === project.id}
+                  onStatusStart={() => {
+                    setMenuId(null);
+                    setRenameId(null);
+                    setDeleteId(null);
+                    setStatusId(project.id);
+                  }}
+                  onStatusCancel={() => setStatusId(null)}
+                  onStatusConfirm={() => {
+                    setStatusId(null);
+                    toggleProjectStatus.mutate({ id: project.id, active: !(project.active ?? true) });
+                  }}
+                />
               ))}
 
             {/* Projects exist, but none match the current filter */}

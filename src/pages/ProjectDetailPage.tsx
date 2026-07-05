@@ -1,13 +1,13 @@
 import { Helmet } from 'react-helmet-async';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 // @mui
-import { Box, Modal, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // components
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api';
-import AuthField, { SubmitButton } from '../sections/auth/AuthField';
 import MapCard, { MapFocus } from '../sections/projects/detail/MapCard';
 import AddSiteForm from '../sections/projects/detail/AddSiteForm';
 import InstantEstimateCard from '../sections/projects/detail/InstantEstimateCard';
@@ -16,83 +16,33 @@ import SitesTable, { siteCapacityKwp } from '../sections/projects/detail/SitesTa
 import { solar, solarApp } from '../theme/solar';
 import { Product, Project } from '../types/models';
 
-// ----------------------------------------------------------------------
-// SolarSense Project Detail page: breadcrumb + project header (rename,
-// delete, status toggle, report), map + add-site form grid, sites table.
-// ----------------------------------------------------------------------
-
-const modalCardSx = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: { xs: 'calc(100% - 40px)', sm: 420 },
-  background: solar.paper,
-  borderRadius: '20px',
-  boxShadow: '0 30px 80px rgba(10,8,2,.45)',
-  p: '32px 32px 28px',
-  fontFamily: solar.fontBody,
-} as const;
-
-const headerIconButtonSx = {
-  width: 38,
-  height: 38,
-  border: `1px solid ${solarApp.chipBorder}`,
-  borderRadius: '10px',
-  background: '#fff',
-  color: solar.muted,
-  fontSize: '15px',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all .14s',
-  '&:hover': { background: solarApp.chipHover, color: solar.ink },
-} as const;
-
 export default function ProjectDetailPage() {
   const { projectId = '' } = useParams<{ projectId: string }>();
+  const { state } = useLocation();
   const navigate = useNavigate();
-
-  const [project, setProject] = useState<Project | null>(null);
-  const [sites, setSites] = useState<Product[]>([]);
-  const [sitesLoaded, setSitesLoaded] = useState<boolean>(false);
-  // Coordinates + location label are shared between the map and the form.
+  const queryClient = useQueryClient();
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
   const [locationName, setLocationName] = useState<string>('');
-  // Panel configuration is page state (not form state) so the Instant
-  // Estimate card in the left column renders live from the same values.
   const [siteForm, setSiteForm] = useState<SiteFormState>(DEFAULT_SITE_FORM);
   const [mapFocus, setMapFocus] = useState<MapFocus | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [renameOpen, setRenameOpen] = useState<boolean>(false);
-  const [renameValue, setRenameValue] = useState<string>('');
-  const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
 
-  const fetchProject = useCallback(async () => {
-    try {
+  const { data: projectData } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: async () => {
       const response = await api.get<Project | null>(`/project?projectId=${projectId}`);
-      setProject(response.data);
-    } catch (error) {
-      toast.error('Could not load the project');
-    }
-  }, [projectId]);
+      return response.data;
+    },
+  });
 
-  const fetchSites = useCallback(async () => {
-    try {
+  const { data: sitesData, isLoading: isSitesLoading } = useQuery({
+    queryKey: ['product', projectId],
+    queryFn: async () => {
       const response = await api.get<Product[]>(`/product?projectId=${projectId}`);
-      setSites(response.data ?? []);
-      setSitesLoaded(true);
-    } catch (error) {
-      toast.error('Could not load sites');
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    fetchProject();
-    fetchSites();
-  }, [fetchProject, fetchSites]);
+      return response.data;
+    },
+  });
 
   const focusMap = (latitude: number, longitude: number, zoom = 11) => {
     setMapFocus((previous) => ({ lat: latitude, lng: longitude, zoom, seq: (previous?.seq ?? 0) + 1 }));
@@ -105,8 +55,7 @@ export default function ProjectDetailPage() {
 
   const parsedLat = parseFloat(lat);
   const parsedLng = parseFloat(lng);
-  const pin =
-    !Number.isNaN(parsedLat) && !Number.isNaN(parsedLng) ? { lat: parsedLat, lng: parsedLng } : null;
+  const pin = !Number.isNaN(parsedLat) && !Number.isNaN(parsedLng) ? { lat: parsedLat, lng: parsedLng } : null;
 
   const handleGeocoded = (name: string, latitude: number, longitude: number) => {
     setCoords(latitude, longitude);
@@ -148,18 +97,19 @@ export default function ProjectDetailPage() {
     setSiteForm(DEFAULT_SITE_FORM);
   };
 
-  const handleSiteSaved = async () => {
-    // Per the design: a project activates once it has its first site.
-    if (sites.length === 0 && project && !(project.active ?? true)) {
-      try {
-        await api.put(`/project/update/${projectId}`, { active: true });
-      } catch (error) {
-        // Non-critical; the user can still toggle the status manually.
-      }
+  const activateProject = useMutation({
+    mutationFn: () => api.put(`/project/update/${projectId}`, { active: true }),
+  });
+
+  const handleSiteSaved = () => {
+    if (sitesData?.length === 0 && projectData && !(projectData.active ?? true)) {
+      activateProject.mutate();
     }
+
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+    queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['product', projectId] });
     clearSiteForm();
-    fetchSites();
-    fetchProject();
   };
 
   const focusAddSiteForm = () => {
@@ -169,70 +119,38 @@ export default function ProjectDetailPage() {
     input?.focus({ preventScroll: true });
   };
 
-  const handleDeleteSite = async (site: Product) => {
-    try {
-      const response = await api.delete(`/product/delete/${site.id}`);
+  const deleteSite = useMutation({
+    mutationFn: (siteId: string) => api.delete(`/product/delete/${siteId}`),
+    onSuccess: (response, siteId) => {
       toast.success(response.data.message);
-      if (editing?.id === site.id) clearSiteForm();
-      fetchSites();
-    } catch (error) {
-      toast.error('Could not delete the site');
-    }
-  };
+      if (editing?.id === siteId) clearSiteForm();
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['product', projectId] });
+    },
+    onError: () => toast.error('Could not delete the site'),
+  });
+
+  const handleDeleteSite = (site: Product) => deleteSite.mutateAsync(site.id);
 
   const handleOpenSite = (site: Product) => {
     navigate(`/projects/${projectId}/${site.id}`, { state: site.name });
   };
 
-  const handleRename = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    try {
-      const response = await api.put(`/project/update/${projectId}`, { name: renameValue });
-      toast.success(response.data.message);
-      setRenameOpen(false);
-      fetchProject();
-    } catch (error) {
-      const message =
-        (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
-      toast.error(message);
-    }
-  };
+  const totals = useMemo(() => {
+    const totalKwp = (sitesData ?? []).reduce((sum, site) => sum + siteCapacityKwp(site), 0);
+    return {
+      count: sitesData?.length ?? 0,
+      kwp: Math.round(totalKwp * 10) / 10,
+    };
+  }, [sitesData]);
 
-  const handleToggleStatus = async () => {
-    if (!project) return;
-    const nextActive = !(project.active ?? true);
-    try {
-      await api.put(`/project/update/${projectId}`, { active: nextActive });
-      setProject({ ...project, active: nextActive });
-    } catch (error) {
-      toast.error('Could not update the project status');
-    }
-  };
-
-  const handleDeleteProject = async () => {
-    try {
-      const response = await api.delete(`/project/delete/${projectId}`);
-      toast.success(response.data.message);
-      navigate('/');
-    } catch (error) {
-      toast.error('Could not delete the project');
-    }
-  };
-
-  const totals = useMemo(
-    () => ({
-      count: sites.length,
-      kwp: Math.round(sites.reduce((sum, site) => sum + siteCapacityKwp(site), 0) * 10) / 10,
-    }),
-    [sites]
-  );
-
-  const active = project?.active ?? true;
+  const active = projectData?.active ?? true;
 
   return (
     <>
       <Helmet>
-        <title>{`${project?.name ?? 'Project'} | SolarSense`}</title>
+        <title>{`${state ?? projectData?.name} | SolarSense`}</title>
       </Helmet>
       <ToastContainer />
 
@@ -250,7 +168,7 @@ export default function ProjectDetailPage() {
             /
           </Box>
           <Box component="span" sx={{ color: solar.ink }}>
-            {project?.name ?? '…'}
+            {state ?? projectData?.name ?? '…'}
           </Box>
         </Box>
 
@@ -265,45 +183,17 @@ export default function ProjectDetailPage() {
             flexWrap: 'wrap',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Typography
-              component="h1"
-              sx={{ fontFamily: solar.fontDisplay, fontSize: '30px', fontWeight: 700, letterSpacing: '-0.02em', m: 0 }}
-            >
-              {project?.name ?? '…'}
-            </Typography>
-            <Box
-              component="button"
-              type="button"
-              title="Rename project"
-              onClick={() => {
-                setRenameValue(project?.name ?? '');
-                setRenameOpen(true);
-              }}
-              sx={headerIconButtonSx}
-            >
-              ✎
-            </Box>
-            <Box
-              component="button"
-              type="button"
-              title="Delete project"
-              onClick={() => setDeleteOpen(true)}
-              sx={{
-                ...headerIconButtonSx,
-                '&:hover': { background: '#FDECEA', color: '#C0392B', borderColor: '#F3C9C2' },
-              }}
-            >
-              🗑
-            </Box>
-          </Box>
+          <Typography
+            component="h1"
+            sx={{ fontFamily: solar.fontDisplay, fontSize: '30px', fontWeight: 700, letterSpacing: '-0.02em', m: 0 }}
+          >
+            {state ?? projectData?.name ?? '…'}
+          </Typography>
 
+          {/* Read-only status banner — changing status lives on the project
+              card's menu (Projects page). */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Box
-              component="button"
-              type="button"
-              onClick={handleToggleStatus}
-              title="Toggle project status"
               sx={{
                 display: 'flex',
                 alignItems: 'center',
@@ -317,7 +207,6 @@ export default function ProjectDetailPage() {
                 fontFamily: solar.fontDisplay,
                 fontSize: '14px',
                 fontWeight: 700,
-                cursor: 'pointer',
               }}
             >
               <Box
@@ -335,7 +224,7 @@ export default function ProjectDetailPage() {
         </Box>
 
         {/* First-time intro banner (brand-new / emptied project) */}
-        {sitesLoaded && sites.length === 0 && (
+        {!isSitesLoading && sitesData?.length === 0 && (
           <Box
             sx={{
               display: 'flex',
@@ -364,7 +253,9 @@ export default function ProjectDetailPage() {
               ☀
             </Box>
             <Box>
-              <Typography sx={{ fontFamily: solar.fontDisplay, fontSize: '16px', fontWeight: 700, color: solar.ink, m: 0 }}>
+              <Typography
+                sx={{ fontFamily: solar.fontDisplay, fontSize: '16px', fontWeight: 700, color: solar.ink, m: 0 }}
+              >
                 Let&apos;s add your first site
               </Typography>
               <Typography sx={{ fontSize: '13.5px', color: solar.sub, mt: '2px' }}>
@@ -385,7 +276,7 @@ export default function ProjectDetailPage() {
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: '22px', minWidth: 0 }}>
-            <MapCard sites={sites} pin={pin} onPin={setCoords} focus={mapFocus} onGeocoded={handleGeocoded} />
+            <MapCard sites={sitesData ?? []} pin={pin} onPin={setCoords} focus={mapFocus} onGeocoded={handleGeocoded} />
             <InstantEstimateCard lat={lat} lng={lng} form={siteForm} />
           </Box>
           <AddSiteForm
@@ -417,7 +308,7 @@ export default function ProjectDetailPage() {
           </Typography>
         </Box>
         <SitesTable
-          sites={sites}
+          sites={sitesData ?? []}
           onEdit={startEdit}
           onDelete={handleDeleteSite}
           onOpen={handleOpenSite}
@@ -425,87 +316,6 @@ export default function ProjectDetailPage() {
           onUseMyLocation={handleUseMyLocation}
         />
       </Box>
-
-      {/* Rename modal */}
-      <Modal open={renameOpen} onClose={() => setRenameOpen(false)} aria-labelledby="rename-project-title">
-        <Box sx={modalCardSx}>
-          <Typography
-            id="rename-project-title"
-            component="h2"
-            sx={{ fontFamily: solar.fontDisplay, fontSize: '22px', fontWeight: 700, m: '0 0 22px', color: solar.ink }}
-          >
-            Rename project
-          </Typography>
-          <form onSubmit={handleRename}>
-            <AuthField
-              label="Project name"
-              name="projectName"
-              required
-              value={renameValue}
-              onChange={(event) => setRenameValue(event.target.value)}
-            />
-            <SubmitButton type="submit">Save name</SubmitButton>
-          </form>
-        </Box>
-      </Modal>
-
-      {/* Delete confirm modal */}
-      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} aria-labelledby="delete-project-title">
-        <Box sx={modalCardSx}>
-          <Typography
-            id="delete-project-title"
-            component="h2"
-            sx={{ fontFamily: solar.fontDisplay, fontSize: '22px', fontWeight: 700, m: 0, color: solar.ink }}
-          >
-            Delete this project?
-          </Typography>
-          <Typography sx={{ fontSize: '14px', color: solar.sub, mt: '8px', mb: '22px' }}>
-            This permanently removes <b>{project?.name}</b> and all of its sites and readings.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: '12px' }}>
-            <Box
-              component="button"
-              type="button"
-              onClick={() => setDeleteOpen(false)}
-              sx={{
-                flex: 1,
-                height: 48,
-                border: `1.5px solid ${solar.line}`,
-                borderRadius: '12px',
-                background: '#fff',
-                color: solar.fieldLabel,
-                fontFamily: solar.fontDisplay,
-                fontSize: '15px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                '&:hover': { background: solarApp.chipHover },
-              }}
-            >
-              Cancel
-            </Box>
-            <Box
-              component="button"
-              type="button"
-              onClick={handleDeleteProject}
-              sx={{
-                flex: 1,
-                height: 48,
-                border: 'none',
-                borderRadius: '12px',
-                background: '#C0392B',
-                color: '#fff',
-                fontFamily: solar.fontDisplay,
-                fontSize: '15px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                '&:hover': { filter: 'brightness(.94)' },
-              }}
-            >
-              Delete project
-            </Box>
-          </Box>
-        </Box>
-      </Modal>
     </>
   );
 }
