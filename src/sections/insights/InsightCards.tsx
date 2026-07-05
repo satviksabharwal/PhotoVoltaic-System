@@ -10,14 +10,10 @@ import {
   formatMoney,
 } from './insightsData';
 
-// ----------------------------------------------------------------------
-// The four homeowner insight cards: Energy produced (hero, with delta),
-// Money saved, Best day and CO₂ avoided. `locked` renders the cold-start
-// skeleton variant (dashed, "—" values, "Soon" badges).
-// ----------------------------------------------------------------------
-
 interface InsightCardsProps {
   locked?: boolean;
+  lockedLabel?: string;
+  stale?: boolean;
   totals?: PeriodTotals;
   period?: PeriodKey;
   tariff?: number | null;
@@ -53,7 +49,15 @@ function DeltaPill({ pct }: { pct: number }) {
   );
 }
 
-export default function InsightCards({ locked = false, totals, period = 'week', tariff, best }: InsightCardsProps) {
+export default function InsightCards({
+  locked = false,
+  lockedLabel = 'Soon',
+  stale = false,
+  totals,
+  period = 'week',
+  tariff,
+  best,
+}: InsightCardsProps) {
   let cards: CardData[];
   if (locked || !totals) {
     cards = [
@@ -99,14 +103,29 @@ export default function InsightCards({ locked = false, totals, period = 'week', 
     ];
   }
 
+  // Frozen cards get a warmer off-white so the data reads as paused, not live.
+  const cardBackground = (card: CardData): string => {
+    if (locked) return '#FAF8F3';
+    if (card.hero)
+      return stale ? 'linear-gradient(135deg, #FBF6E6, #FFFDF9)' : 'linear-gradient(135deg, #FFF6DC, #FFFDF7)';
+    return stale ? '#FBFAF6' : '#fff';
+  };
+  const cardBorderColor = (card: CardData): string => {
+    if (card.hero) return stale ? '#EFE6C6' : '#F4E4A6';
+    return '#EEE8DA';
+  };
+
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: '18px', mb: '22px' }}>
+    <Box
+      sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: '18px', mb: '22px' }}
+    >
       {cards.map((card) => (
         <Box
           key={card.label}
+          aria-disabled={locked || undefined}
           sx={{
-            background: locked ? '#FAF8F3' : card.hero ? 'linear-gradient(135deg, #FFF6DC, #FFFDF7)' : '#fff',
-            border: `1px ${locked ? 'dashed' : 'solid'} ${card.hero ? '#F4E4A6' : '#EEE8DA'}`,
+            background: cardBackground(card),
+            border: `1px ${locked ? 'dashed' : 'solid'} ${cardBorderColor(card)}`,
             borderRadius: '16px',
             p: '20px',
           }}
@@ -126,8 +145,8 @@ export default function InsightCards({ locked = false, totals, period = 'week', 
             >
               {card.icon}
             </Box>
-            {locked && <Box sx={{ fontSize: '11px', fontWeight: 600, color: '#A39B87' }}>Soon</Box>}
-            {!locked && card.deltaPct != null && <DeltaPill pct={card.deltaPct} />}
+            {locked && <Box sx={{ fontSize: '11px', fontWeight: 600, color: '#A39B87' }}>{lockedLabel}</Box>}
+            {!locked && !stale && card.deltaPct != null && <DeltaPill pct={card.deltaPct} />}
           </Box>
           <Box
             sx={{

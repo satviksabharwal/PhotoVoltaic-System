@@ -20,13 +20,20 @@ function toPanelConfig(product: ProductRow): PanelConfig {
 
 // Hourly: fetch panel-plane irradiance for every site and record the energy
 // produced this hour. unique(product_id, recorded_at) makes re-runs no-ops.
+// Sites in INACTIVE projects are skipped — setting a project inactive pauses
+// its data collection (the readings gap is the honest record of that pause).
 export const executeCorn = () => {
   cron.schedule('0 * * * *', async () => {
     try {
       // The hour bucket this run writes.
       const recordedAt = moment().startOf('hour').toISOString(true);
 
-      const { data: products, error } = await supabaseAdmin.from('products').select('*');
+      // Inner join so only sites whose parent project is active are returned
+      // (`active` is NOT NULL DEFAULT TRUE, so equality covers every row).
+      const { data: products, error } = await supabaseAdmin
+        .from('products')
+        .select('*, projects!inner(active)')
+        .eq('projects.active', true);
       if (error) throw error;
 
       (products as ProductRow[]).forEach(async (productData) => {

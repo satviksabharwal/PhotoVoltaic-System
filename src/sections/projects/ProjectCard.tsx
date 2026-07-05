@@ -662,8 +662,8 @@ export default function ProjectCard({
           </Typography>
           <Typography sx={{ fontSize: '13px', lineHeight: 1.5, color: '#8A8270', m: '7px 0 0', maxWidth: 236 }}>
             {active
-              ? 'It moves to the Inactive filter — sites and data stay untouched, and you can switch it back anytime.'
-              : 'It will show under the Active filter again. You can switch it back anytime.'}
+              ? 'This pauses hourly data collection for its sites. Existing data is kept, and you can switch it back anytime.'
+              : 'Hourly data collection resumes for its sites, and it shows under the Active filter again.'}
           </Typography>
           <Box sx={{ display: 'flex', gap: '10px', mt: '18px' }}>
             <Box
