@@ -9,13 +9,6 @@ import { optimalTilt } from '../../../utils/solarEstimate';
 import InfoTip from './InfoTip';
 import { SiteFormState } from './siteFormState';
 
-// ----------------------------------------------------------------------
-// "Add a site" form card: location + coordinates, orientation segments,
-// tilt slider, area and collapsible advanced options. The panel state lives
-// on ProjectDetailPage so the Instant Estimate card can share it. Doubles
-// as the edit form when `editing` is set.
-// ----------------------------------------------------------------------
-
 interface AddSiteFormProps {
   projectId: string;
   locationName: string;
@@ -35,7 +28,13 @@ interface AddSiteFormProps {
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   <Box
     component="label"
-    sx={{ fontSize: '13px', fontWeight: 600, color: solar.fieldLabel, letterSpacing: '0.01em', fontFamily: solar.fontBody }}
+    sx={{
+      fontSize: '13px',
+      fontWeight: 600,
+      color: solar.fieldLabel,
+      letterSpacing: '0.01em',
+      fontFamily: solar.fontBody,
+    }}
   >
     {children}
   </Box>
@@ -96,7 +95,6 @@ export default function AddSiteForm({
   onCancelEdit,
   onSaved,
 }: AddSiteFormProps) {
-  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
 
   const latNumber = parseFloat(lat);
@@ -132,8 +130,7 @@ export default function AddSiteForm({
       toast.success(response.data.message);
       onSaved();
     } catch (error) {
-      const message =
-        (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
+      const message = (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
       toast.error(message);
     } finally {
       setSaving(false);
@@ -258,101 +255,79 @@ export default function AddSiteForm({
           />
         </Box>
 
-        {/* Advanced options */}
+        {/* Former "advanced options" — always open now; a thin divider keeps
+            the visual rhythm where the toggle used to sit. */}
         <Box
-          component="button"
-          type="button"
-          onClick={() => setAdvancedOpen((prev) => !prev)}
           sx={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            background: 'none',
-            border: 'none',
+            flexDirection: 'column',
+            gap: '16px',
             borderTop: '1px solid #F1ECDF',
-            p: '16px 0 4px',
-            mt: '22px',
-            cursor: 'pointer',
-            fontFamily: solar.fontDisplay,
-            fontSize: '14px',
-            fontWeight: 600,
-            color: solar.ink,
+            mt: '18px',
+            pt: '18px',
           }}
         >
-          <span>Advanced options</span>
-          <Box
-            component="span"
-            sx={{ color: solarApp.label, transition: 'transform .18s', transform: advancedOpen ? 'rotate(180deg)' : 'none' }}
-          >
-            ⌄
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <FieldLabel>Module type</FieldLabel>
+            <Segmented
+              options={[
+                { value: 'mono', label: 'Mono' },
+                { value: 'poly', label: 'Poly' },
+                { value: 'thin', label: 'Thin-film' },
+              ]}
+              value={form.module}
+              onChange={(module) => onFormChange({ module })}
+            />
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <FieldLabel>Mounting</FieldLabel>
+            <Segmented
+              options={[
+                { value: 'roof', label: 'Rooftop' },
+                { value: 'ground', label: 'Ground' },
+                { value: 'track', label: 'Tracker' },
+              ]}
+              value={form.mounting}
+              onChange={(mounting) => onFormChange({ mounting })}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <AuthField
+              label={
+                <>
+                  System losses (%)
+                  <InfoTip
+                    ariaLabel="What are system losses?"
+                    tip={
+                      <>
+                        All the real-world losses between sunlight and usable power — heat, inverter, wiring, soiling,
+                        and mismatch. <b>14%</b> is a typical default; lower it for a clean, well-ventilated install.
+                      </>
+                    }
+                  />
+                </>
+              }
+              name="losses"
+              type="number"
+              placeholder="14"
+              min={0}
+              max={99}
+              step="any"
+              value={form.losses}
+              onChange={(event) => onFormChange({ losses: event.target.value })}
+            />
+            <AuthField
+              label="Tariff (€/kWh)"
+              name="tariff"
+              type="number"
+              placeholder="0.30"
+              min={0}
+              step="any"
+              value={form.tariff}
+              onChange={(event) => onFormChange({ tariff: event.target.value })}
+            />
           </Box>
         </Box>
-        {advancedOpen && (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', pt: '6px' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <FieldLabel>Module type</FieldLabel>
-              <Segmented
-                options={[
-                  { value: 'mono', label: 'Mono' },
-                  { value: 'poly', label: 'Poly' },
-                  { value: 'thin', label: 'Thin-film' },
-                ]}
-                value={form.module}
-                onChange={(module) => onFormChange({ module })}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <FieldLabel>Mounting</FieldLabel>
-              <Segmented
-                options={[
-                  { value: 'roof', label: 'Rooftop' },
-                  { value: 'ground', label: 'Ground' },
-                  { value: 'track', label: 'Tracker' },
-                ]}
-                value={form.mounting}
-                onChange={(mounting) => onFormChange({ mounting })}
-              />
-            </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <AuthField
-                label={
-                  <>
-                    System losses (%)
-                    <InfoTip
-                      ariaLabel="What are system losses?"
-                      tip={
-                        <>
-                          All the real-world losses between sunlight and usable power — heat, inverter, wiring,
-                          soiling, and mismatch. <b>14%</b> is a typical default; lower it for a clean,
-                          well-ventilated install.
-                        </>
-                      }
-                    />
-                  </>
-                }
-                name="losses"
-                type="number"
-                placeholder="14"
-                min={0}
-                max={99}
-                step="any"
-                value={form.losses}
-                onChange={(event) => onFormChange({ losses: event.target.value })}
-              />
-              <AuthField
-                label="Tariff (€/kWh)"
-                name="tariff"
-                type="number"
-                placeholder="0.30"
-                min={0}
-                step="any"
-                value={form.tariff}
-                onChange={(event) => onFormChange({ tariff: event.target.value })}
-              />
-            </Box>
-          </Box>
-        )}
 
         <SubmitButton type="submit" disabled={saving} style={saving ? { opacity: 0.7, cursor: 'wait' } : undefined}>
           {saving ? 'Saving…' : editing ? 'Save changes' : '＋ Add site to project'}

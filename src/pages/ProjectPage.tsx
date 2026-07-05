@@ -79,8 +79,7 @@ export default function ProjectPage() {
     },
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(['projects'], context.previous);
-      const message =
-        (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
+      const message = (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? String(error);
       toast.error(message);
     },
     onSettled: (_response, _error, variables) => {
