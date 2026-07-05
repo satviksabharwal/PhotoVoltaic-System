@@ -109,6 +109,7 @@ export default function ProjectDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['projects'] });
     queryClient.invalidateQueries({ queryKey: ['project', projectId] });
     queryClient.invalidateQueries({ queryKey: ['product', projectId] });
+    queryClient.invalidateQueries({ queryKey: ['site'] });
     clearSiteForm();
   };
 
@@ -127,6 +128,8 @@ export default function ProjectDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       queryClient.invalidateQueries({ queryKey: ['product', projectId] });
+      queryClient.removeQueries({ queryKey: ['site', siteId] });
+      queryClient.removeQueries({ queryKey: ['readings', siteId] });
     },
     onError: () => toast.error('Could not delete the site'),
   });
@@ -134,7 +137,9 @@ export default function ProjectDetailPage() {
   const handleDeleteSite = (site: Product) => deleteSite.mutateAsync(site.id);
 
   const handleOpenSite = (site: Product) => {
-    navigate(`/projects/${projectId}/${site.id}`, { state: site.name });
+    navigate(`/projects/${projectId}/${site.id}`, {
+      state: { projectName: state ?? projectData?.name, productName: site.name },
+    });
   };
 
   const totals = useMemo(() => {

@@ -1,16 +1,17 @@
 import { Helmet } from 'react-helmet-async';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link as RouterLink, useLocation, useParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useQuery } from '@tanstack/react-query';
 import api from '../utils/api';
 import InsightCards from '../sections/insights/InsightCards';
 import SunshineFingerprintCard from '../sections/insights/SunshineFingerprintCard';
 import CollectingPanel from '../sections/insights/CollectingPanel';
+import InsightsLoadingState from '../sections/insights/InsightsLoadingState';
 import {
   ApiReading,
-  HourlyReading,
   PERIODS,
   PeriodKey,
   READY_THRESHOLD,
@@ -25,38 +26,50 @@ import {
 import { solar, solarApp } from '../theme/solar';
 import { Product, Project } from '../types/models';
 
-// ----------------------------------------------------------------------
-// SolarSense Insights page for one site: period chips, four homeowner
-// insight cards and the sunshine-fingerprint heatmap — or the cold-start
-// collecting panel until the first full day of hourly data exists.
-// ----------------------------------------------------------------------
-
 export default function InsightsPage() {
   const { projectId = '', productId = '' } = useParams<{ projectId: string; productId: string }>();
+  const { state } = useLocation();
+  const { projectName: stateProjectName, productName: stateProductName } = (state ?? {}) as {
+    projectName?: string;
+    productName?: string;
+  };
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [product, setProduct] = useState<Product | null>(null);
-  const [readings, setReadings] = useState<HourlyReading[] | null>(null);
   const [period, setPeriod] = useState<PeriodKey>('week');
 
-  const fetchAll = useCallback(async () => {
-    try {
-      const [projectResponse, productResponse, readingsResponse] = await Promise.all([
-        api.get<Project | null>(`/project?projectId=${projectId}`),
-        api.get<Product | null>(`/product/item?productId=${productId}`),
-        api.get<ApiReading[]>(`/product/readings?productId=${productId}`),
-      ]);
-      setProject(projectResponse.data);
-      setProduct(productResponse.data);
-      setReadings(parseReadings(readingsResponse.data ?? []));
-    } catch (error) {
-      toast.error('Could not load the site insights');
-    }
-  }, [projectId, productId]);
+  const { data: project, isError: projectIsError } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: async () => {
+      const response = await api.get<Project | null>(`/project?projectId=${projectId}`);
+      return response.data;
+    },
+    enabled: !stateProjectName,
+  });
 
+  const { data: product, isError: productIsError } = useQuery({
+    queryKey: ['site', productId],
+    queryFn: async () => {
+      const response = await api.get<Product | null>(`/product/item?productId=${productId}`);
+      return response.data;
+    },
+  });
+
+  // Parsed once in the queryFn, so the cache holds ready-to-use readings.
+  const {
+    data: readings,
+    isError: readingsIsError,
+    isPending: readingsPending,
+  } = useQuery({
+    queryKey: ['readings', productId],
+    queryFn: async () => {
+      const response = await api.get<ApiReading[]>(`/product/readings?productId=${productId}`);
+      return parseReadings(response.data ?? []);
+    },
+  });
+
+  const anyError = projectIsError || productIsError || readingsIsError;
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+    if (anyError) toast.error('Could not load the site insights');
+  }, [anyError]);
 
   const ready = (readings?.length ?? 0) >= READY_THRESHOLD;
 
@@ -80,16 +93,30 @@ export default function InsightsPage() {
     return readings.filter((reading) => reading.date >= startOfToday).length;
   }, [readings]);
 
+  // Navigation state paints first; the API result backs it up on deep links.
+  const projectName = stateProjectName ?? project?.name;
+  const productName = stateProductName ?? product?.name;
+
   return (
     <>
       <Helmet>
-        <title>{`${product?.name ?? 'Insights'} | SolarSense`}</title>
+        <title>{`${productName ?? 'Insights'} | SolarSense`}</title>
       </Helmet>
       <ToastContainer />
 
       <Box sx={{ maxWidth: 1240, mx: 'auto', fontFamily: solar.fontBody }}>
         {/* Breadcrumb */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, mb: '14px', flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            mb: '14px',
+            flexWrap: 'wrap',
+          }}
+        >
           <Box
             component={RouterLink}
             to="/"
@@ -105,13 +132,13 @@ export default function InsightsPage() {
             to={`/projects/${projectId}`}
             sx={{ color: solarApp.chipCount, textDecoration: 'none', '&:hover': { color: solar.accentDeep } }}
           >
-            {project?.name ?? '…'}
+            {projectName ?? '…'}
           </Box>
           <Box component="span" sx={{ color: '#CFC7B4' }}>
             /
           </Box>
           <Box component="span" sx={{ color: solar.ink }}>
-            {product?.name ?? '…'} · Insights
+            {productName ?? '…'} · Insights
           </Box>
         </Box>
 
@@ -131,7 +158,7 @@ export default function InsightsPage() {
               component="h1"
               sx={{ fontFamily: solar.fontDisplay, fontSize: '30px', fontWeight: 700, letterSpacing: '-0.02em', m: 0 }}
             >
-              {product?.name ?? '…'}
+              {productName ?? '…'}
             </Typography>
             <Typography sx={{ fontSize: '15px', color: solar.sub, mt: '6px' }}>
               {ready
@@ -148,6 +175,7 @@ export default function InsightsPage() {
                   component="button"
                   type="button"
                   aria-pressed={on}
+                  disabled={readingsPending}
                   onClick={() => setPeriod(option.key)}
                   sx={{
                     height: 34,
@@ -169,6 +197,10 @@ export default function InsightsPage() {
             })}
           </Box>
         </Box>
+
+        {/* Skeletons while the first (uncached) load is in flight — same box
+            metrics as the real cards, so nothing reflows when data lands. */}
+        {readingsPending && <InsightsLoadingState />}
 
         {readings != null && insights && (
           <>
