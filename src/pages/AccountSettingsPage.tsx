@@ -1,8 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { Link as RouterLink } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import ProfileCard from '../sections/settings/ProfileCard';
 import PasswordCard from '../sections/settings/PasswordCard';
 import DangerZoneCard from '../sections/settings/DangerZoneCard';
@@ -20,7 +18,6 @@ export default function AccountSettingsPage() {
       <Helmet>
         <title>Account settings | SolarSense</title>
       </Helmet>
-      <ToastContainer />
 
       <Box sx={{ maxWidth: 680, mx: 'auto', fontFamily: solar.fontBody }}>
         {/* Breadcrumb */}

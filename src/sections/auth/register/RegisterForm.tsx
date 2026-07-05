@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // @mui
 import { Box } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import { supabase } from '../../../utils/supabase';
 // sections
 import AuthField, { SubmitButton } from '../AuthField';
@@ -95,7 +94,6 @@ export default function RegisterForm() {
 
   return (
     <form onSubmit={handleRegister}>
-      <ToastContainer />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <AuthField
           label="Display name"

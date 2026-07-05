@@ -2,8 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { useEffect, useMemo, useState } from 'react';
 import { Link as RouterLink, useLocation, useParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import api from '../utils/api';
@@ -133,7 +132,6 @@ export default function InsightsPage() {
       <Helmet>
         <title>{`${productName ?? 'Insights'} | SolarSense`}</title>
       </Helmet>
-      <ToastContainer />
 
       <Box sx={{ maxWidth: 1240, mx: 'auto', fontFamily: solar.fontBody }}>
         {/* Breadcrumb */}

@@ -1,14 +1,9 @@
+import { memo } from 'react';
 import { Box } from '@mui/material';
 import { solar, solarApp } from '../../../theme/solar';
 import { Product } from '../../../types/models';
 import { estimateOutput, WP_PER_M2 } from '../../../utils/solarEstimate';
 import EmptySitesState from './EmptySitesState';
-
-// ----------------------------------------------------------------------
-// Sites table card: header row + one grid row per site with edit / delete /
-// Open (visualization) actions. Renders the designed empty state when the
-// project has no sites.
-// ----------------------------------------------------------------------
 
 interface SitesTableProps {
   sites: Product[];
@@ -57,17 +52,26 @@ const iconButtonSx = {
   '&:hover': { background: solarApp.chipHover, color: solar.ink },
 } as const;
 
-export default function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocation }: SitesTableProps) {
+function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocation }: SitesTableProps) {
   if (sites.length === 0) {
     return (
-      <Box sx={{ background: '#fff', border: `1px solid ${solarApp.cardBorder}`, borderRadius: '18px', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          background: '#fff',
+          border: `1px solid ${solarApp.cardBorder}`,
+          borderRadius: '18px',
+          overflow: 'hidden',
+        }}
+      >
         <EmptySitesState onAddFirst={onAddFirst} onUseMyLocation={onUseMyLocation} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ background: '#fff', border: `1px solid ${solarApp.cardBorder}`, borderRadius: '18px', overflow: 'hidden' }}>
+    <Box
+      sx={{ background: '#fff', border: `1px solid ${solarApp.cardBorder}`, borderRadius: '18px', overflow: 'hidden' }}
+    >
       <Box
         sx={{
           display: 'grid',
@@ -82,7 +86,13 @@ export default function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst
         {['Site', 'Coordinates', 'Capacity', 'Orient.', 'Tilt', 'Est. output', 'Actions'].map((heading) => (
           <Box
             key={heading}
-            sx={{ fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: solarApp.chipCount }}
+            sx={{
+              fontSize: '11.5px',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: solarApp.chipCount,
+            }}
           >
             {heading}
           </Box>
@@ -137,7 +147,14 @@ export default function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst
             </Box>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Box component="button" type="button" title="Edit" aria-label={`Edit ${site.name}`} onClick={() => onEdit(site)} sx={iconButtonSx}>
+            <Box
+              component="button"
+              type="button"
+              title="Edit"
+              aria-label={`Edit ${site.name}`}
+              onClick={() => onEdit(site)}
+              sx={iconButtonSx}
+            >
               ✎
             </Box>
             <Box
@@ -177,7 +194,10 @@ export default function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst
             >
               <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: 12 }}>
                 {[5, 9, 12].map((height) => (
-                  <Box key={height} sx={{ width: '3px', height: `${height}px`, background: solar.accent, borderRadius: '1px' }} />
+                  <Box
+                    key={height}
+                    sx={{ width: '3px', height: `${height}px`, background: solar.accent, borderRadius: '1px' }}
+                  />
                 ))}
               </Box>
               Open
@@ -188,3 +208,5 @@ export default function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst
     </Box>
   );
 }
+
+export default memo(SitesTable);

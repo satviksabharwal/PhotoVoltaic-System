@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L, { LeafletMouseEvent } from 'leaflet';
@@ -9,10 +9,6 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { solar, solarApp } from '../../../theme/solar';
 import { Product } from '../../../types/models';
 
-// Bundlers rewrite leaflet's default icon asset paths; point them at the
-// imported files so markers render. Deleting _getIconUrl disables Leaflet's
-// CSS-based path auto-detection, which under Vite prepends a broken prefix
-// to these URLs.
 delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -24,7 +20,6 @@ export interface MapFocus {
   lat: number;
   lng: number;
   zoom: number;
-  /** Monotonic counter so repeated focuses on the same spot still fly. */
   seq: number;
 }
 
@@ -56,8 +51,12 @@ function FlyTo({ focus }: { focus: MapFocus | null }) {
   return null;
 }
 
-export default function MapCard({ sites, pin, onPin, focus, onGeocoded }: MapCardProps) {
+function MapCard({ sites, pin, onPin, focus, onGeocoded }: MapCardProps) {
   const [search, setSearch] = useState<string>('');
+  const [mapMounted, setMapMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setMapMounted(true);
+  }, []);
 
   const runSearch = async () => {
     const query = search.trim();
@@ -156,22 +155,26 @@ export default function MapCard({ sites, pin, onPin, focus, onGeocoded }: MapCar
         </Box>
       </Box>
 
-      <MapContainer center={DEFAULT_CENTER} zoom={6} style={{ height: 520, width: '100%', zIndex: 0 }}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {sites.map((site) => (
-          <Marker position={[site.latitude, site.longitude]} key={site.id}>
-            <Popup>
-              <strong>{site.name}</strong>
-            </Popup>
-          </Marker>
-        ))}
-        {pin && <Marker position={[pin.lat, pin.lng]} />}
-        <ClickToPin onPin={onPin} />
-        <FlyTo focus={focus} />
-      </MapContainer>
+      {mapMounted ? (
+        <MapContainer center={DEFAULT_CENTER} zoom={6} style={{ height: 520, width: '100%', zIndex: 0 }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {sites.map((site) => (
+            <Marker position={[site.latitude, site.longitude]} key={site.id}>
+              <Popup>
+                <strong>{site.name}</strong>
+              </Popup>
+            </Marker>
+          ))}
+          {pin && <Marker position={[pin.lat, pin.lng]} />}
+          <ClickToPin onPin={onPin} />
+          <FlyTo focus={focus} />
+        </MapContainer>
+      ) : (
+        <Box sx={{ height: 520, width: '100%', background: '#EDEAE1' }} />
+      )}
 
       <Box
         sx={{
@@ -198,3 +201,5 @@ export default function MapCard({ sites, pin, onPin, focus, onGeocoded }: MapCar
     </Box>
   );
 }
+
+export default memo(MapCard);

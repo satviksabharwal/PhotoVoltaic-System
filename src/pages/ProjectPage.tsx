@@ -2,8 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Modal, Typography } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api';
 import AuthField, { SubmitButton } from '../sections/auth/AuthField';
@@ -166,7 +165,6 @@ export default function ProjectPage() {
       <Helmet>
         <title> Projects | SolarSense </title>
       </Helmet>
-      <ToastContainer />
 
       <Box sx={{ maxWidth: 1180, mx: 'auto', fontFamily: solar.fontBody }}>
         {/* Header row */}

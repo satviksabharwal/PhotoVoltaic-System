@@ -3,8 +3,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 // @mui
 import { Box, Link, Typography } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 // sections
 import AuthLayout from '../sections/auth/AuthLayout';
 import AuthField, { SubmitButton } from '../sections/auth/AuthField';
@@ -106,7 +105,6 @@ export default function ResetPassword() {
 
         {hasSession && (
           <form onSubmit={handleSubmit}>
-            <ToastContainer />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px', mt: '26px' }}>
               <AuthField
                 label="New password"

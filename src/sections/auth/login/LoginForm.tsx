@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Link } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { setCurrentUserAction } from '../../../store/user/user.action';
 import { AppDispatch } from '../../../store/store';
@@ -59,7 +58,6 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleLogin}>
-      <ToastContainer />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <AuthField
           label="Email address"

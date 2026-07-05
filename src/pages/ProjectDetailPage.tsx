@@ -1,10 +1,9 @@
 import { Helmet } from 'react-helmet-async';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 // @mui
 import { Box, Typography } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 // components
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../utils/api';
@@ -44,26 +43,35 @@ export default function ProjectDetailPage() {
     },
   });
 
-  const focusMap = (latitude: number, longitude: number, zoom = 11) => {
+  // Handlers passed to the memoized MapCard / SitesTable are useCallback-
+  // stable (and `pin` is memoized) so form keystrokes — which re-render this
+  // page — don't re-reconcile those heavy subtrees.
+  const focusMap = useCallback((latitude: number, longitude: number, zoom = 11) => {
     setMapFocus((previous) => ({ lat: latitude, lng: longitude, zoom, seq: (previous?.seq ?? 0) + 1 }));
-  };
+  }, []);
 
-  const setCoords = (latitude: number, longitude: number) => {
+  const setCoords = useCallback((latitude: number, longitude: number) => {
     setLat(latitude.toFixed(4));
     setLng(longitude.toFixed(4));
-  };
+  }, []);
 
   const parsedLat = parseFloat(lat);
   const parsedLng = parseFloat(lng);
-  const pin = !Number.isNaN(parsedLat) && !Number.isNaN(parsedLng) ? { lat: parsedLat, lng: parsedLng } : null;
+  const pin = useMemo(
+    () => (!Number.isNaN(parsedLat) && !Number.isNaN(parsedLng) ? { lat: parsedLat, lng: parsedLng } : null),
+    [parsedLat, parsedLng]
+  );
 
-  const handleGeocoded = (name: string, latitude: number, longitude: number) => {
-    setCoords(latitude, longitude);
-    if (name && !editing) setLocationName(name);
-    focusMap(latitude, longitude);
-  };
+  const handleGeocoded = useCallback(
+    (name: string, latitude: number, longitude: number) => {
+      setCoords(latitude, longitude);
+      if (name && !editing) setLocationName(name);
+      focusMap(latitude, longitude);
+    },
+    [editing, setCoords, focusMap]
+  );
 
-  const handleUseMyLocation = () => {
+  const handleUseMyLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not available in this browser');
       return;
@@ -75,19 +83,22 @@ export default function ProjectDetailPage() {
       },
       () => toast.error('Could not determine your location')
     );
-  };
+  }, [setCoords, focusMap]);
 
   const patchSiteForm = (patch: Partial<SiteFormState>) => {
     setSiteForm((previous) => ({ ...previous, ...patch }));
   };
 
-  const startEdit = (site: Product) => {
-    setEditing(site);
-    setLocationName(site.name);
-    setSiteForm(siteFormFromProduct(site));
-    setCoords(site.latitude, site.longitude);
-    focusMap(site.latitude, site.longitude);
-  };
+  const startEdit = useCallback(
+    (site: Product) => {
+      setEditing(site);
+      setLocationName(site.name);
+      setSiteForm(siteFormFromProduct(site));
+      setCoords(site.latitude, site.longitude);
+      focusMap(site.latitude, site.longitude);
+    },
+    [setCoords, focusMap]
+  );
 
   const clearSiteForm = () => {
     setEditing(null);
@@ -113,12 +124,12 @@ export default function ProjectDetailPage() {
     clearSiteForm();
   };
 
-  const focusAddSiteForm = () => {
+  const focusAddSiteForm = useCallback(() => {
     // AuthField renders its input with id `field-${name}`.
     const input = document.getElementById('field-siteLocation');
     input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     input?.focus({ preventScroll: true });
-  };
+  }, []);
 
   const deleteSite = useMutation({
     mutationFn: (siteId: string) => api.delete(`/product/delete/${siteId}`),
@@ -134,13 +145,18 @@ export default function ProjectDetailPage() {
     onError: () => toast.error('Could not delete the site'),
   });
 
-  const handleDeleteSite = (site: Product) => deleteSite.mutateAsync(site.id);
+  // mutateAsync has a stable identity (the mutation result object doesn't).
+  const { mutateAsync: deleteSiteAsync } = deleteSite;
+  const handleDeleteSite = useCallback((site: Product) => deleteSiteAsync(site.id), [deleteSiteAsync]);
 
-  const handleOpenSite = (site: Product) => {
-    navigate(`/projects/${projectId}/${site.id}`, {
-      state: { projectName: state ?? projectData?.name, productName: site.name },
-    });
-  };
+  const handleOpenSite = useCallback(
+    (site: Product) => {
+      navigate(`/projects/${projectId}/${site.id}`, {
+        state: { projectName: state ?? projectData?.name, productName: site.name },
+      });
+    },
+    [navigate, projectId, state, projectData?.name]
+  );
 
   const totals = useMemo(() => {
     const totalKwp = (sitesData ?? []).reduce((sum, site) => sum + siteCapacityKwp(site), 0);
@@ -157,7 +173,6 @@ export default function ProjectDetailPage() {
       <Helmet>
         <title>{`${state ?? projectData?.name} | SolarSense`}</title>
       </Helmet>
-      <ToastContainer />
 
       <Box sx={{ maxWidth: 1240, mx: 'auto', fontFamily: solar.fontBody }}>
         {/* Breadcrumb */}

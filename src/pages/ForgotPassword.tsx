@@ -3,8 +3,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 // @mui
 import { Box, Link, Typography } from '@mui/material';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 // sections
 import AuthLayout from '../sections/auth/AuthLayout';
 import AuthField, { SubmitButton } from '../sections/auth/AuthField';
@@ -84,7 +83,6 @@ export default function ForgotPassword() {
           </Typography>
         ) : (
           <form onSubmit={handleSubmit}>
-            <ToastContainer />
             <AuthField
               label="Email address"
               name="email"
