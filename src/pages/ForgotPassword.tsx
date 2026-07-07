@@ -10,8 +10,6 @@ import AuthField, { SubmitButton } from '../sections/auth/AuthField';
 import { solar } from '../sections/auth/tokens';
 import { supabase } from '../utils/supabase';
 
-// ----------------------------------------------------------------------
-
 export default function ForgotPassword() {
   const [email, setEmail] = useState<string>('');
   const [sent, setSent] = useState<boolean>(false);

@@ -22,67 +22,77 @@ function toPanelConfig(product: ProductRow): PanelConfig {
 // produced this hour. unique(product_id, recorded_at) makes re-runs no-ops.
 // Sites in INACTIVE projects are skipped — setting a project inactive pauses
 // its data collection (the readings gap is the honest record of that pause).
-export const executeCorn = () => {
-  cron.schedule('0 * * * *', async () => {
-    try {
-      // The hour bucket this run writes.
-      const recordedAt = moment().startOf('hour').toISOString(true);
+const collectHourlyReadings = async () => {
+  try {
+    // The hour bucket this run writes.
+    const recordedAt = moment().startOf('hour').toISOString(true);
 
-      // Inner join so only sites whose parent project is active are returned
-      // (`active` is NOT NULL DEFAULT TRUE, so equality covers every row).
-      const { data: products, error } = await supabaseAdmin
-        .from('products')
-        .select('*, projects!inner(active)')
-        .eq('projects.active', true);
-      if (error) throw error;
+    // Inner join so only sites whose parent project is active are returned
+    // (`active` is NOT NULL DEFAULT TRUE, so equality covers every row).
+    const { data: products, error } = await supabaseAdmin
+      .from('products')
+      .select('*, projects!inner(active)')
+      .eq('projects.active', true);
+    if (error) throw error;
 
-      (products as ProductRow[]).forEach(async (productData) => {
-        try {
-          const panel = toPanelConfig(productData);
-          const gti = await fetchCurrentGti(panel);
-          if (gti == null) {
-            console.error(`No irradiance data for site ${productData.id} this hour`);
-            return;
-          }
-
-          const pvValue = hourlyEnergyKwh(panel, gti);
-          // Average power over the hour, in watts.
-          const powerPeak = pvValue * 1000;
-
-          const { data: inserted, error: upsertError } = await supabaseAdmin
-            .from('pv_readings')
-            .upsert(
-              {
-                product_id: productData.id,
-                project_id: productData.project_id,
-                user_id: productData.user_id,
-                recorded_at: recordedAt,
-                pv_value: pvValue,
-                power_peak: powerPeak,
-                area: productData.area,
-                inclination: productData.inclination,
-                solar_rad: gti,
-              },
-              { onConflict: 'product_id,recorded_at', ignoreDuplicates: true }
-            )
-            .select();
-          if (upsertError) {
-            console.error('Error saving reading:', upsertError);
-          } else if (inserted?.length) {
-            console.log(`Recorded ${pvValue.toFixed(3)} kWh for site ${productData.id}`);
-          } else {
-            console.log('Data already updated');
-          }
-        } catch (err) {
-          console.error('Error processing site', productData.id, err);
+    (products as ProductRow[]).forEach(async (productData) => {
+      try {
+        const panel = toPanelConfig(productData);
+        const gti = await fetchCurrentGti(panel);
+        if (gti == null) {
+          console.error(
+            `No irradiance data for site ${productData.id} this hour`
+          );
+          return;
         }
-      });
 
-      console.log('Electricity calculation completed for the hour');
-    } catch (error) {
-      console.error('Error occurred during electricity calculation:', error);
-    }
-  });
+        const pvValue = hourlyEnergyKwh(panel, gti);
+        // Average power over the hour, in watts.
+        const powerPeak = pvValue * 1000;
+
+        const { data: inserted, error: upsertError } = await supabaseAdmin
+          .from('pv_readings')
+          .upsert(
+            {
+              product_id: productData.id,
+              project_id: productData.project_id,
+              user_id: productData.user_id,
+              recorded_at: recordedAt,
+              pv_value: pvValue,
+              power_peak: powerPeak,
+              area: productData.area,
+              inclination: productData.inclination,
+              solar_rad: gti,
+            },
+            { onConflict: 'product_id,recorded_at', ignoreDuplicates: true }
+          )
+          .select();
+        if (upsertError) {
+          console.error('Error saving reading:', upsertError);
+        } else if (inserted?.length) {
+          console.log(
+            `Recorded ${pvValue.toFixed(3)} kWh for site ${productData.id}`
+          );
+        } else {
+          console.log('Data already updated');
+        }
+      } catch (err) {
+        console.error('Error processing site', productData.id, err);
+      }
+    });
+
+    console.log('Electricity calculation completed for the hour');
+  } catch (error) {
+    console.error('Error occurred during electricity calculation:', error);
+  }
+};
+
+export const executeCorn = () => {
+  cron.schedule('0 * * * *', collectHourlyReadings);
+  // Also collect once on boot: deploys and restarts otherwise lose any tick
+  // that fell while the process was down. The unique(product_id, recorded_at)
+  // upsert makes this a no-op when the hour was already recorded.
+  collectHourlyReadings();
 };
 
 console.log('Cron job started');
