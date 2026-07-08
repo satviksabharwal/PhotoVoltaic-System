@@ -15,6 +15,7 @@ interface SitesTableProps {
 }
 
 const GRID_COLUMNS = '1.5fr 1.2fr 0.8fr 0.7fr 0.6fr 1.1fr 1.2fr';
+const MOBILE = '@container (max-width: 600px)';
 
 export function siteCapacityKwp(site: Product): number {
   return site.kwp ?? (site.area * WP_PER_M2[site.module ?? 'mono']) / 1000;
@@ -36,6 +37,27 @@ function siteAnnualOutput(site: Product): number {
   return estimate ? Math.round(estimate.annualKwh) : 0;
 }
 
+const cellSx = {
+  minWidth: 0,
+  [MOBILE]: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '14px',
+    p: '7px 0',
+    '&::before': {
+      content: 'attr(data-label)',
+      flex: '0 0 auto',
+      marginRight: 'auto',
+      fontSize: '11px',
+      fontWeight: 700,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+      color: '#9A9280',
+    },
+  },
+} as const;
+
 const iconButtonSx = {
   width: 32,
   height: 32,
@@ -50,6 +72,7 @@ const iconButtonSx = {
   justifyContent: 'center',
   transition: 'all .13s',
   '&:hover': { background: solarApp.chipHover, color: solar.ink },
+  [MOBILE]: { width: 44, height: 44 },
 } as const;
 
 function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocation }: SitesTableProps) {
@@ -70,7 +93,13 @@ function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocati
 
   return (
     <Box
-      sx={{ background: '#fff', border: `1px solid ${solarApp.cardBorder}`, borderRadius: '18px', overflow: 'hidden' }}
+      sx={{
+        background: '#fff',
+        border: `1px solid ${solarApp.cardBorder}`,
+        borderRadius: '18px',
+        overflow: 'hidden',
+        containerType: 'inline-size',
+      }}
     >
       <Box
         sx={{
@@ -81,6 +110,7 @@ function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocati
           p: '15px 22px',
           background: '#FAF7EF',
           borderBottom: `1px solid ${solarApp.cardBorder}`,
+          [MOBILE]: { display: 'none' },
         }}
       >
         {['Site', 'Coordinates', 'Capacity', 'Orient.', 'Tilt', 'Est. output', 'Actions'].map((heading) => (
@@ -112,16 +142,40 @@ function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocati
             color: '#4A4536',
             '& + &': { borderTop: '1px solid #F3EEE2' },
             '&:hover': { background: '#FDFBF4' },
+            [MOBILE]: { gridTemplateColumns: '1fr', gap: 0, p: '16px 18px' },
           }}
         >
-          <Box sx={{ fontFamily: solar.fontDisplay, fontWeight: 600, color: solar.ink }}>{site.name}</Box>
-          <Box sx={{ fontVariantNumeric: 'tabular-nums', color: solarApp.subtitle, fontSize: '13px' }}>
+          {/* Site name = the card heading on mobile: left-aligned, no label */}
+          <Box
+            sx={{
+              ...cellSx,
+              fontFamily: solar.fontDisplay,
+              fontWeight: 600,
+              color: solar.ink,
+              [MOBILE]: {
+                ...cellSx[MOBILE],
+                fontSize: '17px',
+                pt: 0,
+                justifyContent: 'flex-start',
+                '&::before': { display: 'none' },
+              },
+            }}
+          >
+            {site.name}
+          </Box>
+          <Box
+            data-label="Coordinates"
+            sx={{ ...cellSx, fontVariantNumeric: 'tabular-nums', color: solarApp.subtitle, fontSize: '13px' }}
+          >
             {site.latitude.toFixed(4)}, {site.longitude.toFixed(4)}
           </Box>
-          <Box sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: solar.ink }}>
+          <Box
+            data-label="Capacity"
+            sx={{ ...cellSx, fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: solar.ink }}
+          >
             {siteCapacityKwp(site).toFixed(1)} kWp
           </Box>
-          <Box>
+          <Box data-label="Orient." sx={cellSx}>
             <Box
               component="span"
               sx={{
@@ -139,14 +193,40 @@ function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocati
               {site.orientation}
             </Box>
           </Box>
-          <Box sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: solar.ink }}>{site.inclination}°</Box>
-          <Box sx={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: solar.ink }}>
-            {siteAnnualOutput(site).toLocaleString('en-US')}{' '}
-            <Box component="span" sx={{ fontWeight: 400, color: solarApp.chipCount }}>
-              kWh/yr
+          <Box
+            data-label="Tilt"
+            sx={{ ...cellSx, fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: solar.ink }}
+          >
+            {site.inclination}°
+          </Box>
+          <Box
+            data-label="Est. output"
+            sx={{ ...cellSx, fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: solar.ink }}
+          >
+            {/* One wrapper span so number + unit stay a single flex item */}
+            <Box component="span">
+              {siteAnnualOutput(site).toLocaleString('en-US')}{' '}
+              <Box component="span" sx={{ fontWeight: 400, color: solarApp.chipCount }}>
+                kWh/yr
+              </Box>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+
+          {/* Actions — their own divider row on mobile */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              [MOBILE]: {
+                justifyContent: 'flex-start',
+                flexWrap: 'wrap',
+                pt: '13px',
+                mt: '7px',
+                borderTop: '1px solid #F3EEE2',
+              },
+            }}
+          >
             <Box
               component="button"
               type="button"
@@ -190,6 +270,7 @@ function SitesTable({ sites, onEdit, onDelete, onOpen, onAddFirst, onUseMyLocati
                 cursor: 'pointer',
                 transition: 'filter .15s',
                 '&:hover': { filter: 'brightness(1.2)' },
+                [MOBILE]: { ml: 'auto', height: 44, px: '18px' },
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: 12 }}>

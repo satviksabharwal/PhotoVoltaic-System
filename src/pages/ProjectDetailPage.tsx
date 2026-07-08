@@ -285,35 +285,42 @@ export default function ProjectDetailPage() {
           </Box>
         )}
 
-        {/* Map + estimate | form grid. Stretch lets the left column match the
-            form's height, with the estimate card absorbing the difference. */}
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1.55fr 1fr' },
             gap: '22px',
+            gridTemplateColumns: { xs: '1fr', md: '1.55fr 1fr' },
+            gridTemplateAreas: {
+              xs: '"map" "form" "estimate"',
+              md: '"map form" "estimate form"',
+            },
+            gridTemplateRows: { md: 'auto 1fr' },
             alignItems: 'stretch',
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '22px', minWidth: 0 }}>
+          <Box sx={{ gridArea: 'map', minWidth: 0 }}>
             <MapCard sites={sitesData ?? []} pin={pin} onPin={setCoords} focus={mapFocus} onGeocoded={handleGeocoded} />
+          </Box>
+          <Box sx={{ gridArea: 'estimate', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <InstantEstimateCard lat={lat} lng={lng} form={siteForm} />
           </Box>
-          <AddSiteForm
-            projectId={projectId}
-            locationName={locationName}
-            onLocationNameChange={setLocationName}
-            lat={lat}
-            lng={lng}
-            onLatChange={setLat}
-            onLngChange={setLng}
-            onUseMyLocation={handleUseMyLocation}
-            form={siteForm}
-            onFormChange={patchSiteForm}
-            editing={editing}
-            onCancelEdit={clearSiteForm}
-            onSaved={handleSiteSaved}
-          />
+          <Box sx={{ gridArea: 'form', minWidth: 0 }}>
+            <AddSiteForm
+              projectId={projectId}
+              locationName={locationName}
+              onLocationNameChange={setLocationName}
+              lat={lat}
+              lng={lng}
+              onLatChange={setLat}
+              onLngChange={setLng}
+              onUseMyLocation={handleUseMyLocation}
+              form={siteForm}
+              onFormChange={patchSiteForm}
+              editing={editing}
+              onCancelEdit={clearSiteForm}
+              onSaved={handleSiteSaved}
+            />
+          </Box>
         </Box>
 
         {/* Sites table */}
