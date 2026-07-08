@@ -89,6 +89,12 @@ export default function ProjectDetailPage() {
     setSiteForm((previous) => ({ ...previous, ...patch }));
   };
 
+  const focusAddSiteForm = useCallback(() => {
+    const input = document.getElementById('field-siteLocation');
+    input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input?.focus({ preventScroll: true });
+  }, []);
+
   const startEdit = useCallback(
     (site: Product) => {
       setEditing(site);
@@ -96,8 +102,9 @@ export default function ProjectDetailPage() {
       setSiteForm(siteFormFromProduct(site));
       setCoords(site.latitude, site.longitude);
       focusMap(site.latitude, site.longitude);
+      focusAddSiteForm();
     },
-    [setCoords, focusMap]
+    [setCoords, focusMap, focusAddSiteForm]
   );
 
   const clearSiteForm = () => {
@@ -123,13 +130,6 @@ export default function ProjectDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['site'] });
     clearSiteForm();
   };
-
-  const focusAddSiteForm = useCallback(() => {
-    // AuthField renders its input with id `field-${name}`.
-    const input = document.getElementById('field-siteLocation');
-    input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    input?.focus({ preventScroll: true });
-  }, []);
 
   const deleteSite = useMutation({
     mutationFn: (siteId: string) => api.delete(`/product/delete/${siteId}`),
