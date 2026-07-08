@@ -171,13 +171,13 @@ export default function InsightsPage() {
           </Box>
         </Box>
 
-        {/* Header + period chips */}
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'flex-end',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'flex-end' },
             justifyContent: 'space-between',
-            gap: '20px',
+            gap: { xs: '14px', sm: '20px' },
             mb: '18px',
             flexWrap: 'wrap',
           }}
@@ -185,7 +185,13 @@ export default function InsightsPage() {
           <Box>
             <Typography
               component="h1"
-              sx={{ fontFamily: solar.fontDisplay, fontSize: '30px', fontWeight: 700, letterSpacing: '-0.02em', m: 0 }}
+              sx={{
+                fontFamily: solar.fontDisplay,
+                fontSize: { xs: '24px', sm: '30px' },
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                m: 0,
+              }}
             >
               {productName ?? '…'}
               {paused && (
@@ -246,9 +252,6 @@ export default function InsightsPage() {
             })}
           </Box>
         </Box>
-
-        {/* Skeletons while the first (uncached) load is in flight — same box
-            metrics as the real cards, so nothing reflows when data lands. */}
         {readingsPending && <InsightsLoadingState />}
 
         {showPausedData && lastRecordedLabel && (

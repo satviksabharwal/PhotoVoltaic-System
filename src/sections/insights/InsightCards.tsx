@@ -115,19 +115,32 @@ export default function InsightCards({
     return '#EEE8DA';
   };
 
+  const uniformBackground = (): string => {
+    if (locked) return '#FAF8F3';
+    return stale ? '#FBFAF6' : '#fff';
+  };
+
   return (
     <Box
-      sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: '18px', mb: '22px' }}
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+        gap: { xs: '12px', md: '18px' },
+        mb: '22px',
+      }}
     >
       {cards.map((card) => (
         <Box
           key={card.label}
           aria-disabled={locked || undefined}
           sx={{
-            background: cardBackground(card),
-            border: `1px ${locked ? 'dashed' : 'solid'} ${cardBorderColor(card)}`,
+            background: { xs: uniformBackground(), md: cardBackground(card) },
+            border: {
+              xs: `1px ${locked ? 'dashed' : 'solid'} #EEE8DA`,
+              md: `1px ${locked ? 'dashed' : 'solid'} ${cardBorderColor(card)}`,
+            },
             borderRadius: '16px',
-            p: '20px',
+            p: { xs: '16px', md: '20px' },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '14px' }}>
@@ -151,7 +164,7 @@ export default function InsightCards({
           <Box
             sx={{
               fontFamily: solar.fontDisplay,
-              fontSize: '30px',
+              fontSize: { xs: '26px', md: '30px' },
               fontWeight: 700,
               color: locked ? '#C7BFAC' : solar.ink,
               lineHeight: 1,
