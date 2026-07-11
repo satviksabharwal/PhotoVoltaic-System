@@ -54,10 +54,36 @@ interface OpenMeteoResponse {
   };
 }
 
-/**
- * Fetches the panel-plane irradiance (W/m²) for the current UTC hour from
- * Open-Meteo. Returns null when the API is unreachable or has no value.
- */
+export interface GtiSeries {
+  /** UTC hour stamps, e.g. "2026-07-07T14:00". */
+  time: string[];
+  gti: (number | null)[];
+}
+
+export async function fetchRecentGtiSeries(panel: PanelConfig, pastDays = 3): Promise<GtiSeries | null> {
+  try {
+    const response = await axios.get<OpenMeteoResponse>('https://api.open-meteo.com/v1/forecast', {
+      timeout: REQUEST_TIMEOUT_MS,
+      params: {
+        latitude: panel.latitude,
+        longitude: panel.longitude,
+        hourly: 'global_tilted_irradiance',
+        tilt: panel.inclination,
+        azimuth: ORIENTATION_AZIMUTH[panel.orientation],
+        past_days: pastDays,
+        forecast_days: 1,
+        timezone: 'UTC',
+      },
+    });
+    const { time, global_tilted_irradiance: gti } = response.data.hourly ?? {};
+    if (!time || !gti) return null;
+    return { time, gti };
+  } catch (error) {
+    console.error('Open-Meteo request failed:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
 export async function fetchCurrentGti(panel: PanelConfig): Promise<number | null> {
   try {
     const response = await axios.get<OpenMeteoResponse>('https://api.open-meteo.com/v1/forecast', {
@@ -98,9 +124,7 @@ interface PvgisResponse {
 }
 
 export interface PvgisEstimate {
-  /** Yearly production estimate in kWh. */
   annualKwh: number;
-  /** Production estimate per calendar month (Jan–Dec), in kWh. */
   monthlyKwh: number[];
 }
 

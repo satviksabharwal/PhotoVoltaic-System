@@ -7,7 +7,7 @@ import userRoutes from './routes/user.js';
 import projectRoutes from './routes/project.js';
 import productRoutes from './routes/product.js';
 import solarRoutes from './routes/solar.js';
-import { executeCorn } from './cornCalculatePS.js';
+import { collectHourlyReadings, executeCorn } from './cornCalculatePS.js';
 
 const rawData = fs.readFileSync('./swagger.json');
 
@@ -30,6 +30,15 @@ app.use(cors({ origin: allowedOrigins || true }));
 // Healthcheck for the hosting platform and uptime monitors.
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/cron/run', (req, res) => {
+  if (!process.env.CRON_SECRET || req.get('x-cron-secret') !== process.env.CRON_SECRET) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  collectHourlyReadings();
+  res.json({ started: true });
 });
 
 app.use('/api/user', userRoutes);
