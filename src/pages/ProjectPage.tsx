@@ -44,8 +44,8 @@ export default function ProjectPage() {
 
   const { data, isPending, isError, isFetching, error, refetch } = useQuery({
     queryKey: ['projects'],
-    queryFn: async () => {
-      const response = await api.get<Project[]>('/project');
+    queryFn: async ({ signal }) => {
+      const response = await api.get<Project[]>('/project', { signal });
       return response.data ?? [];
     },
   });

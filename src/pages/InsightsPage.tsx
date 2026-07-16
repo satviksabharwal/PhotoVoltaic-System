@@ -41,16 +41,16 @@ export default function InsightsPage() {
 
   const { data: project, isError: projectIsError } = useQuery({
     queryKey: ['project', projectId],
-    queryFn: async () => {
-      const response = await api.get<Project | null>(`/project?projectId=${projectId}`);
+    queryFn: async ({ signal }) => {
+      const response = await api.get<Project | null>(`/project?projectId=${projectId}`, { signal });
       return response.data;
     },
   });
 
   const { data: product, isError: productIsError } = useQuery({
     queryKey: ['site', productId],
-    queryFn: async () => {
-      const response = await api.get<Product | null>(`/product/item?productId=${productId}`);
+    queryFn: async ({ signal }) => {
+      const response = await api.get<Product | null>(`/product/item?productId=${productId}`, { signal });
       return response.data;
     },
   });
@@ -62,8 +62,8 @@ export default function InsightsPage() {
     isPending: readingsPending,
   } = useQuery({
     queryKey: ['readings', productId],
-    queryFn: async () => {
-      const response = await api.get<ApiReading[]>(`/product/readings?productId=${productId}`);
+    queryFn: async ({ signal }) => {
+      const response = await api.get<ApiReading[]>(`/product/readings?productId=${productId}`, { signal });
       return parseReadings(response.data ?? []);
     },
   });

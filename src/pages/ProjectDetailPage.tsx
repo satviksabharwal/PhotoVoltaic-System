@@ -29,16 +29,16 @@ export default function ProjectDetailPage() {
 
   const { data: projectData } = useQuery({
     queryKey: ['project', projectId],
-    queryFn: async () => {
-      const response = await api.get<Project | null>(`/project?projectId=${projectId}`);
+    queryFn: async ({ signal }) => {
+      const response = await api.get<Project | null>(`/project?projectId=${projectId}`, { signal });
       return response.data;
     },
   });
 
   const { data: sitesData, isLoading: isSitesLoading } = useQuery({
     queryKey: ['product', projectId],
-    queryFn: async () => {
-      const response = await api.get<Product[]>(`/product?projectId=${projectId}`);
+    queryFn: async ({ signal }) => {
+      const response = await api.get<Product[]>(`/product?projectId=${projectId}`, { signal });
       return response.data;
     },
   });
